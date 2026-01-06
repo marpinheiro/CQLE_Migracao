@@ -34,11 +34,11 @@ namespace CQLE_MIGRACAO.Services
     public void ExecutarMigracaoCompleta(MigrationConfig config, Action<string> log)
     {
       log("╔════════════════════════════════════════════════════╗");
-      log("║   CQLE AUTOMATOR - MIGRAÇÃO UNIFICADA INICIADA    ║");
+      log("║      CQLE MIGRAÇÃO - MIGRAÇÃO UNIFICADA INICIADA   ║");
       log("╚════════════════════════════════════════════════════╝");
       log("");
-      log($"Modo: {(config.IsOnline ? "ONLINE" : "OFFLINE")}");
-      log($"Destino: {config.ServerDestino}");
+      log($"Modo: {(config.IsOnline ? "ONLINE (direto)" : "OFFLINE (gera scripts)")}");
+      log($"Servidor Destino: {config.ServerDestino}");
       log("");
 
       int totalOperacoes = config.DatabaseNames.Count;
@@ -49,11 +49,11 @@ namespace CQLE_MIGRACAO.Services
 
       try
       {
-        // FASE 1: BANCOS
+        // FASE 1: BANCOS DE DADOS
         if (config.DatabaseNames.Count > 0)
         {
           log("┌─────────────────────────────────────────────────┐");
-          log("│  FASE 1: MIGRAÇÃO DE BANCOS DE DADOS           │");
+          log("│  FASE 1: MIGRAÇÃO DE BANCOS DE DADOS            │");
           log("└─────────────────────────────────────────────────┘");
 
           foreach (var banco in config.DatabaseNames)
@@ -64,11 +64,11 @@ namespace CQLE_MIGRACAO.Services
             try
             {
               _databaseEngine.ExecutarMigracaoAutomatizada(
-                banco,
-                config.ServerDestino,
-                config.IsOnline,
-                config.PastaBackup,
-                (msg) => log($"    {msg}")
+                  banco,
+                  config.ServerDestino,
+                  config.IsOnline,
+                  config.PastaBackup,
+                  (msg) => log($"    {msg}")
               );
 
               log($"✅ Banco '{banco}' migrado com sucesso");
@@ -94,14 +94,14 @@ namespace CQLE_MIGRACAO.Services
           try
           {
             string connDestino = config.IsOnline
-              ? $"Server={config.ServerDestino};Database=master;Trusted_Connection=True;TrustServerCertificate=True;"
-              : "";
+                ? $"Server={config.ServerDestino};Database=master;Trusted_Connection=True;TrustServerCertificate=True;"
+                : "";
 
             _linkedServerService.ProcessarMigracao(
-              _connectionStringOrigem,
-              connDestino,
-              config.IsOnline,
-              config.OutputPath
+                _connectionStringOrigem,
+                connDestino,
+                config.IsOnline,
+                config.OutputPath
             );
 
             log("✅ Linked Servers processados com sucesso");
@@ -120,33 +120,55 @@ namespace CQLE_MIGRACAO.Services
           }
         }
 
-        // FASE 3: JOBS (SEMPRE ONLINE)
+        // FASE 3: JOBS - MIGRAÇÃO DIRETA SEMPRE (quando destino informado)
         if (config.IncludeJobs)
         {
           operacaoAtual++;
           log("┌─────────────────────────────────────────────────┐");
-          log("│  FASE 3: MIGRAÇÃO DE SQL AGENT JOBS            │");
+          log("│  FASE 3: MIGRAÇÃO DIRETA DE SQL AGENT JOBS     │");
           log("└─────────────────────────────────────────────────┘");
-          log($"[{operacaoAtual}/{totalOperacoes}] Processando Jobs...");
 
-          try
+          if (string.IsNullOrWhiteSpace(config.ServerDestino))
           {
-            string connDestino = $"Server={config.ServerDestino};Database=msdb;Trusted_Connection=True;TrustServerCertificate=True;";
-
-            _jobService.ProcessarMigracao(
-              _connectionStringOrigem,
-              connDestino,
-              true,
-              config.OutputPath
-            );
-
-            log("✅ Jobs migrados com sucesso");
+            log("⚠ Servidor destino não informado → Jobs não serão migrados.");
             log("");
           }
-          catch (Exception ex)
+          else
           {
-            log($"❌ ERRO ao processar Jobs: {ex.Message}");
-            log("");
+            log($"[{operacaoAtual}/{totalOperacoes}] Migrando Jobs diretamente para: {config.ServerDestino}");
+
+            try
+            {
+              string connStringDestino = $"Server={config.ServerDestino};Database=msdb;Trusted_Connection=True;TrustServerCertificate=True;";
+
+              bool gerarBackup = !string.IsNullOrEmpty(config.OutputPath);
+
+              List<string> logJobs = _jobService.MigrarJobs(
+                  connStringOrigem: _connectionStringOrigem,
+                  connStringDestino: connStringDestino,
+                  gerarScriptsBackup: gerarBackup,
+                  caminhoOutput: config.OutputPath
+              );
+
+              foreach (var linha in logJobs)
+              {
+                log(linha);
+              }
+
+              log("✅ Jobs migrados diretamente com sucesso.");
+
+              if (gerarBackup)
+                log($"📁 Backup dos scripts salvo em: {config.OutputPath}");
+
+              log("");
+            }
+            catch (Exception ex)
+            {
+              log($"❌ ERRO na migração direta de Jobs: {ex.Message}");
+              if (ex.InnerException != null)
+                log($"   Detalhe: {ex.InnerException.Message}");
+              log("");
+            }
           }
         }
 
@@ -157,8 +179,8 @@ namespace CQLE_MIGRACAO.Services
         if (!config.IsOnline)
         {
           log("");
-          log("⚠ ATENÇÃO: Modo OFFLINE detectado.");
-          log($"   Os scripts SQL foram salvos em: {config.OutputPath}");
+          log("⚠ Modo OFFLINE ativo.");
+          log($"   Scripts gerados em: {config.OutputPath}");
           log("   Execute-os manualmente no servidor destino.");
         }
       }
@@ -201,11 +223,11 @@ namespace CQLE_MIGRACAO.Services
         {
           conn.Open();
           var cmd = new SqlCommand(
-            @"SELECT name FROM sys.servers 
-              WHERE is_linked = 1 
-              AND name <> @@SERVERNAME
-              ORDER BY name",
-            conn);
+              @"SELECT name FROM sys.servers 
+                          WHERE is_linked = 1 
+                          AND name <> @@SERVERNAME
+                          ORDER BY name",
+              conn);
 
           using (var reader = cmd.ExecuteReader())
           {
@@ -231,10 +253,9 @@ namespace CQLE_MIGRACAO.Services
         {
           conn.Open();
           var cmd = new SqlCommand(
-            @"SELECT name FROM msdb.dbo.sysjobs 
-              WHERE enabled = 1 
-              ORDER BY name",
-            conn);
+              @"SELECT name FROM msdb.dbo.sysjobs 
+                          ORDER BY name",
+              conn);
 
           using (var reader = cmd.ExecuteReader())
           {
