@@ -1,0 +1,42 @@
+--deletar todos os jobs da instancia
+USE msdb;
+GO
+
+DECLARE @jobName SYSNAME;
+DECLARE job_cursor CURSOR FOR
+SELECT name
+FROM msdb.dbo.sysjobs
+WHERE name NOT LIKE 'syspolicy_%'
+  AND name NOT LIKE 'MaintenancePlan.%';
+
+OPEN job_cursor;
+FETCH NEXT FROM job_cursor INTO @jobName;
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    PRINT 'Deletando Job: ' + @jobName;
+    EXEC msdb.dbo.sp_delete_job @job_name = @jobName;
+    FETCH NEXT FROM job_cursor INTO @jobName;
+END
+
+CLOSE job_cursor;
+DEALLOCATE job_cursor;
+GO
+
+
+--deletar todos os databases da instancia
+USE master;
+GO
+
+DECLARE @sql NVARCHAR(MAX) = N'';
+
+SELECT @sql += '
+ALTER DATABASE [' + name + '] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+DROP DATABASE [' + name + '];
+'
+FROM sys.databases
+WHERE name NOT IN ('master','model','msdb','tempdb');
+
+PRINT @sql; -- Para revisar
+EXEC sp_executesql @sql; -- DESCOMENTE para executar
+GO

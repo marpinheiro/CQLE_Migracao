@@ -114,7 +114,7 @@ namespace CQLE_MIGRACAO.Forms
       // Grupo 1: Conexão
       GroupBox grpConexao = new GroupBox
       {
-        Text = "  1️⃣ Conexão com Servidor de Origem  ",
+        Text = "  Conexão com Servidor de Origem  ",
         Location = new Point(20, 85),
         Size = new Size(910, 90),
         Font = new Font("Segoe UI", 9, FontStyle.Bold),
@@ -160,7 +160,7 @@ namespace CQLE_MIGRACAO.Forms
       // Grupo 2: Objetos
       GroupBox grpSelecao = new GroupBox
       {
-        Text = "  2️⃣ Objetos para Migração  ",
+        Text = "   Objetos para Migração  ",
         Location = new Point(20, 190),
         Size = new Size(450, 340),
         Font = new Font("Segoe UI", 9, FontStyle.Bold),
@@ -288,7 +288,7 @@ namespace CQLE_MIGRACAO.Forms
       // Grupo 3: Estratégia
       GroupBox grpModo = new GroupBox
       {
-        Text = "  3️⃣ Estratégia de Migração  ",
+        Text = "  Estratégia de Migração  ",
         Location = new Point(480, 190),
         Size = new Size(450, 180),
         Font = new Font("Segoe UI", 9, FontStyle.Bold),
@@ -297,17 +297,21 @@ namespace CQLE_MIGRACAO.Forms
 
       rbOnline = new RadioButton
       {
-        Text = "🟢 ONLINE - Conectar e criar objetos direto no destino",
+        Text = "🟢 ONLINE - Em desenvolvimento (Log Shipping)",
         Location = new Point(20, 35),
         Size = new Size(410, 22),
-        Checked = true,
+        Checked = false,
+        Enabled = false,
         Font = new Font("Segoe UI", 9, FontStyle.Bold),
         ForeColor = Color.FromArgb(0, 150, 0)
       };
 
       Label lblOnlineDesc = new Label
       {
-        Text = "• Conecta automaticamente no servidor destino\n" +
+        Text = "• Modo ONLINE estará disponível futuramente\n" +
+               "• Implementação baseada em Log Shipping\n" +
+               "• Execução automática no servidor destino" +
+               "• Conecta automaticamente no servidor destino\n" +
                "• Cria bancos, linked servers e jobs em tempo real\n" +
                "• Ideal para ambientes homogêneos",
         Location = new Point(40, 58),
@@ -322,14 +326,15 @@ namespace CQLE_MIGRACAO.Forms
         Location = new Point(20, 115),
         Size = new Size(410, 22),
         Font = new Font("Segoe UI", 9, FontStyle.Bold),
-        ForeColor = Color.FromArgb(255, 140, 0)
+        ForeColor = Color.FromArgb(255, 140, 0),
+        Checked = true  // Padrao selecionado
       };
 
       Label lblOfflineDesc = new Label
       {
-        Text = "• Gera arquivos .sql sem conectar no destino\n" +
-               "• Permite revisão manual dos scripts\n" +
-               "• Ideal para ambientes controlados/auditados",
+        Text = "• Gera arquivos de log da migração\n" +
+               "• Maneira rapida e eficiente\n" +
+               "• Ideal para todos os ambientes ",
         Location = new Point(40, 138),
         Size = new Size(390, 50),
         Font = new Font("Segoe UI", 8),
@@ -361,7 +366,7 @@ namespace CQLE_MIGRACAO.Forms
 
       Label lblInfo = new Label
       {
-        Text = "💡 Dica: Use o modo OFFLINE para revisar scripts antes de executar",
+        Text = "💡 OFFLINE,testado e válido",
         Location = new Point(480, 470),
         Size = new Size(450, 30),
         Font = new Font("Segoe UI", 8, FontStyle.Italic),
