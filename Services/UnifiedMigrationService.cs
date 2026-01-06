@@ -120,7 +120,7 @@ namespace CQLE_MIGRACAO.Services
           }
         }
 
-        // FASE 3: JOBS
+        // FASE 3: JOBS (SEMPRE ONLINE)
         if (config.IncludeJobs)
         {
           operacaoAtual++;
@@ -131,24 +131,16 @@ namespace CQLE_MIGRACAO.Services
 
           try
           {
-            string connDestino = config.IsOnline
-              ? $"Server={config.ServerDestino};Database=msdb;Trusted_Connection=True;TrustServerCertificate=True;"
-              : "";
+            string connDestino = $"Server={config.ServerDestino};Database=msdb;Trusted_Connection=True;TrustServerCertificate=True;";
 
             _jobService.ProcessarMigracao(
               _connectionStringOrigem,
               connDestino,
-              config.IsOnline,
+              true,
               config.OutputPath
             );
 
-            log("✅ Jobs processados com sucesso");
-
-            if (!config.IsOnline)
-            {
-              log($"📁 Scripts salvos em: {config.OutputPath}");
-            }
-
+            log("✅ Jobs migrados com sucesso");
             log("");
           }
           catch (Exception ex)

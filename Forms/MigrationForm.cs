@@ -1,3 +1,4 @@
+#nullable disable
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -9,56 +10,60 @@ namespace CQLE_MIGRACAO.Forms
 {
   public partial class MigrationForm : Form
   {
-    private System.ComponentModel.IContainer? components = null;
-
-    // --- Controles da Interface ---
-    private TextBox txtConnectionString = null!;
-    private CheckedListBox clbDatabases = null!;
-    private CheckBox chkJobs = null!;
-    private CheckBox chkLinkedServers = null!;
-    private RadioButton rbOnline = null!;
-    private RadioButton rbOffline = null!;
-    private TextBox txtLog = null!;
-    private Button btnListar = null!;
-    private Button btnExecutar = null!;
-
-    // Novos controles para informações
-    private Label lblJobsCount = null!;
-    private Label lblLinkedServersCount = null!;
-    private Label lblDatabasesCount = null!;
+    private System.ComponentModel.IContainer components = null;
+    private TextBox txtConnectionString;
+    private CheckedListBox clbDatabases;
+    private CheckBox chkJobs;
+    private CheckBox chkLinkedServers;
+    private RadioButton rbOnline;
+    private RadioButton rbOffline;
+    private TextBox txtLog;
+    private Button btnListar;
+    private Button btnExecutar;
+    private Button btnSair;
+    private Label lblJobsCount;
+    private Label lblLinkedServersCount;
+    private Label lblDatabasesCount;
 
     public MigrationForm()
     {
       InitializeComponent();
       ConfigurarInterfaceAvancada();
+
+      try
+      {
+        this.Icon = new Icon("CQLE.ico");
+      }
+      catch { }
     }
 
     private void InitializeComponent()
     {
       this.components = new System.ComponentModel.Container();
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-      this.ClientSize = new System.Drawing.Size(900, 650);
-      this.Text = "CQLE Migração - Dashboard Unificado v2.0";
+      this.ClientSize = new System.Drawing.Size(950, 700);
+      this.Text = "CQLE Migração - Dashboard Principal";
       this.StartPosition = FormStartPosition.CenterScreen;
       this.BackColor = Color.FromArgb(240, 240, 245);
-      this.Icon = SystemIcons.Application;
+      this.FormBorderStyle = FormBorderStyle.Sizable;
+      this.MinimumSize = new Size(950, 700);
     }
 
     private void ConfigurarInterfaceAvancada()
     {
-      // --- CABEÇALHO ---
+      // Cabeçalho
       Panel panelHeader = new Panel
       {
         Location = new Point(0, 0),
-        Size = new Size(900, 60),
+        Size = new Size(950, 70),
         BackColor = Color.FromArgb(0, 120, 215)
       };
 
       Label lblTitle = new Label
       {
-        Text = "🗄️ CQLE MIGRATION AUTOMATOR",
+        Text = "🗄️ CQLE MIGRAÇÃO",
         Location = new Point(20, 12),
-        Size = new Size(500, 20),
+        Size = new Size(500, 22),
         Font = new Font("Segoe UI", 14, FontStyle.Bold),
         ForeColor = Color.White
       };
@@ -66,22 +71,52 @@ namespace CQLE_MIGRACAO.Forms
       Label lblSubtitle = new Label
       {
         Text = "Sistema Profissional de Migração SQL Server",
-        Location = new Point(20, 35),
-        Size = new Size(500, 15),
-        Font = new Font("Segoe UI", 8),
+        Location = new Point(20, 38),
+        Size = new Size(500, 18),
+        Font = new Font("Segoe UI", 9),
         ForeColor = Color.FromArgb(200, 220, 255)
       };
 
+      Button btnSobre = new Button
+      {
+        Text = "ℹ️ Sobre",
+        Location = new Point(780, 15),
+        Size = new Size(80, 40),
+        FlatStyle = FlatStyle.Flat,
+        BackColor = Color.FromArgb(0, 100, 180),
+        ForeColor = Color.White,
+        Cursor = Cursors.Hand,
+        Font = new Font("Segoe UI", 9, FontStyle.Bold)
+      };
+      btnSobre.FlatAppearance.BorderSize = 0;
+      btnSobre.Click += BtnSobre_Click;
+
+      btnSair = new Button
+      {
+        Text = "❌ Sair",
+        Location = new Point(865, 15),
+        Size = new Size(70, 40),
+        FlatStyle = FlatStyle.Flat,
+        BackColor = Color.FromArgb(200, 50, 50),
+        ForeColor = Color.White,
+        Cursor = Cursors.Hand,
+        Font = new Font("Segoe UI", 9, FontStyle.Bold)
+      };
+      btnSair.FlatAppearance.BorderSize = 0;
+      btnSair.Click += BtnSair_Click;
+
       panelHeader.Controls.Add(lblTitle);
       panelHeader.Controls.Add(lblSubtitle);
+      panelHeader.Controls.Add(btnSobre);
+      panelHeader.Controls.Add(btnSair);
       this.Controls.Add(panelHeader);
 
-      // --- GRUPO 1: CONEXÃO ---
+      // Grupo 1: Conexão
       GroupBox grpConexao = new GroupBox
       {
         Text = "  1️⃣ Conexão com Servidor de Origem  ",
-        Location = new Point(20, 75),
-        Size = new Size(850, 90),
+        Location = new Point(20, 85),
+        Size = new Size(910, 90),
         Font = new Font("Segoe UI", 9, FontStyle.Bold),
         ForeColor = Color.FromArgb(0, 120, 215)
       };
@@ -99,15 +134,15 @@ namespace CQLE_MIGRACAO.Forms
       {
         Text = "Server=localhost;Database=master;Trusted_Connection=True;TrustServerCertificate=True;",
         Location = new Point(15, 50),
-        Size = new Size(670, 25),
+        Size = new Size(730, 25),
         Font = new Font("Consolas", 9)
       };
 
       btnListar = new Button
       {
         Text = "🔍 Conectar & Inventariar",
-        Location = new Point(700, 48),
-        Size = new Size(130, 30),
+        Location = new Point(760, 48),
+        Size = new Size(135, 30),
         BackColor = Color.FromArgb(0, 120, 215),
         ForeColor = Color.White,
         FlatStyle = FlatStyle.Flat,
@@ -122,17 +157,16 @@ namespace CQLE_MIGRACAO.Forms
       grpConexao.Controls.Add(btnListar);
       this.Controls.Add(grpConexao);
 
-      // --- GRUPO 2: SELEÇÃO DE OBJETOS ---
+      // Grupo 2: Objetos
       GroupBox grpSelecao = new GroupBox
       {
         Text = "  2️⃣ Objetos para Migração  ",
-        Location = new Point(20, 180),
-        Size = new Size(420, 330),
+        Location = new Point(20, 190),
+        Size = new Size(450, 340),
         Font = new Font("Segoe UI", 9, FontStyle.Bold),
         ForeColor = Color.FromArgb(0, 120, 215)
       };
 
-      // Bancos de Dados
       Label lblDb = new Label
       {
         Text = "📦 Bancos de Dados:",
@@ -144,7 +178,7 @@ namespace CQLE_MIGRACAO.Forms
       lblDatabasesCount = new Label
       {
         Text = "(0 encontrados)",
-        Location = new Point(150, 32),
+        Location = new Point(160, 32),
         AutoSize = true,
         ForeColor = Color.Gray,
         Font = new Font("Segoe UI", 8)
@@ -153,18 +187,17 @@ namespace CQLE_MIGRACAO.Forms
       clbDatabases = new CheckedListBox
       {
         Location = new Point(15, 55),
-        Size = new Size(390, 160),
+        Size = new Size(420, 180),
         CheckOnClick = true,
         Font = new Font("Consolas", 9),
         IntegralHeight = false
       };
 
-      // Botões de seleção
       Button btnSelectAll = new Button
       {
         Text = "✓ Todos",
-        Location = new Point(15, 220),
-        Size = new Size(75, 25),
+        Location = new Point(15, 240),
+        Size = new Size(80, 25),
         FlatStyle = FlatStyle.Flat,
         Font = new Font("Segoe UI", 8),
         Cursor = Cursors.Hand
@@ -178,8 +211,8 @@ namespace CQLE_MIGRACAO.Forms
       Button btnSelectNone = new Button
       {
         Text = "✗ Nenhum",
-        Location = new Point(100, 220),
-        Size = new Size(80, 25),
+        Location = new Point(105, 240),
+        Size = new Size(85, 25),
         FlatStyle = FlatStyle.Flat,
         Font = new Font("Segoe UI", 8),
         Cursor = Cursors.Hand
@@ -190,19 +223,17 @@ namespace CQLE_MIGRACAO.Forms
           clbDatabases.SetItemChecked(i, false);
       };
 
-      // Separator
-      Panel separator1 = new Panel
+      Panel separator = new Panel
       {
-        Location = new Point(15, 255),
-        Size = new Size(390, 2),
+        Location = new Point(15, 275),
+        Size = new Size(420, 2),
         BackColor = Color.LightGray
       };
 
-      // Objetos do Sistema
       Label lblSistema = new Label
       {
         Text = "⚙️ Objetos de Sistema:",
-        Location = new Point(15, 265),
+        Location = new Point(15, 285),
         AutoSize = true,
         Font = new Font("Segoe UI", 9, FontStyle.Bold)
       };
@@ -210,7 +241,7 @@ namespace CQLE_MIGRACAO.Forms
       chkLinkedServers = new CheckBox
       {
         Text = "🔗 Linked Servers",
-        Location = new Point(30, 290),
+        Location = new Point(30, 305),
         AutoSize = true,
         Font = new Font("Segoe UI", 9)
       };
@@ -218,7 +249,7 @@ namespace CQLE_MIGRACAO.Forms
       lblLinkedServersCount = new Label
       {
         Text = "(0 encontrados)",
-        Location = new Point(180, 292),
+        Location = new Point(200, 307),
         AutoSize = true,
         ForeColor = Color.Gray,
         Font = new Font("Segoe UI", 8)
@@ -227,7 +258,7 @@ namespace CQLE_MIGRACAO.Forms
       chkJobs = new CheckBox
       {
         Text = "⏱️ SQL Agent Jobs",
-        Location = new Point(270, 290),
+        Location = new Point(290, 305),
         AutoSize = true,
         Font = new Font("Segoe UI", 9)
       };
@@ -235,7 +266,7 @@ namespace CQLE_MIGRACAO.Forms
       lblJobsCount = new Label
       {
         Text = "(0 encontrados)",
-        Location = new Point(270, 307),
+        Location = new Point(290, 322),
         AutoSize = true,
         ForeColor = Color.Gray,
         Font = new Font("Segoe UI", 8)
@@ -246,7 +277,7 @@ namespace CQLE_MIGRACAO.Forms
       grpSelecao.Controls.Add(clbDatabases);
       grpSelecao.Controls.Add(btnSelectAll);
       grpSelecao.Controls.Add(btnSelectNone);
-      grpSelecao.Controls.Add(separator1);
+      grpSelecao.Controls.Add(separator);
       grpSelecao.Controls.Add(lblSistema);
       grpSelecao.Controls.Add(chkLinkedServers);
       grpSelecao.Controls.Add(lblLinkedServersCount);
@@ -254,12 +285,12 @@ namespace CQLE_MIGRACAO.Forms
       grpSelecao.Controls.Add(lblJobsCount);
       this.Controls.Add(grpSelecao);
 
-      // --- GRUPO 3: ESTRATÉGIA ---
+      // Grupo 3: Estratégia
       GroupBox grpModo = new GroupBox
       {
         Text = "  3️⃣ Estratégia de Migração  ",
-        Location = new Point(450, 180),
-        Size = new Size(420, 160),
+        Location = new Point(480, 190),
+        Size = new Size(450, 180),
         Font = new Font("Segoe UI", 9, FontStyle.Bold),
         ForeColor = Color.FromArgb(0, 120, 215)
       };
@@ -268,7 +299,7 @@ namespace CQLE_MIGRACAO.Forms
       {
         Text = "🟢 ONLINE - Conectar e criar objetos direto no destino",
         Location = new Point(20, 35),
-        Size = new Size(380, 25),
+        Size = new Size(410, 22),
         Checked = true,
         Font = new Font("Segoe UI", 9, FontStyle.Bold),
         ForeColor = Color.FromArgb(0, 150, 0)
@@ -279,8 +310,8 @@ namespace CQLE_MIGRACAO.Forms
         Text = "• Conecta automaticamente no servidor destino\n" +
                "• Cria bancos, linked servers e jobs em tempo real\n" +
                "• Ideal para ambientes homogêneos",
-        Location = new Point(40, 55),
-        Size = new Size(360, 45),
+        Location = new Point(40, 58),
+        Size = new Size(390, 50),
         Font = new Font("Segoe UI", 8),
         ForeColor = Color.DimGray
       };
@@ -288,8 +319,8 @@ namespace CQLE_MIGRACAO.Forms
       rbOffline = new RadioButton
       {
         Text = "🟠 OFFLINE - Gerar scripts SQL para execução manual",
-        Location = new Point(20, 105),
-        Size = new Size(380, 25),
+        Location = new Point(20, 115),
+        Size = new Size(410, 22),
         Font = new Font("Segoe UI", 9, FontStyle.Bold),
         ForeColor = Color.FromArgb(255, 140, 0)
       };
@@ -299,8 +330,8 @@ namespace CQLE_MIGRACAO.Forms
         Text = "• Gera arquivos .sql sem conectar no destino\n" +
                "• Permite revisão manual dos scripts\n" +
                "• Ideal para ambientes controlados/auditados",
-        Location = new Point(40, 125),
-        Size = new Size(360, 40),
+        Location = new Point(40, 138),
+        Size = new Size(390, 50),
         Font = new Font("Segoe UI", 8),
         ForeColor = Color.DimGray
       };
@@ -311,12 +342,12 @@ namespace CQLE_MIGRACAO.Forms
       grpModo.Controls.Add(lblOfflineDesc);
       this.Controls.Add(grpModo);
 
-      // --- BOTÃO PRINCIPAL ---
+      // Botão Principal
       btnExecutar = new Button
       {
-        Text = "🚀 INICIAR MIGRAÇÃO AUTOMATIZADA",
-        Location = new Point(450, 355),
-        Size = new Size(420, 70),
+        Text = "🚀 INICIAR MIGRAÇÃO",
+        Location = new Point(480, 385),
+        Size = new Size(450, 75),
         BackColor = Color.FromArgb(0, 120, 0),
         ForeColor = Color.White,
         Font = new Font("Segoe UI", 14, FontStyle.Bold),
@@ -328,58 +359,22 @@ namespace CQLE_MIGRACAO.Forms
       btnExecutar.Click += BtnExecutar_Click;
       this.Controls.Add(btnExecutar);
 
-      // Info adicional
       Label lblInfo = new Label
       {
         Text = "💡 Dica: Use o modo OFFLINE para revisar scripts antes de executar",
-        Location = new Point(450, 435),
-        Size = new Size(420, 30),
+        Location = new Point(480, 470),
+        Size = new Size(450, 30),
         Font = new Font("Segoe UI", 8, FontStyle.Italic),
         ForeColor = Color.Gray,
         TextAlign = ContentAlignment.MiddleCenter
       };
       this.Controls.Add(lblInfo);
 
-      // Botão Sobre
-      Button btnAbout = new Button
-      {
-        Text = "ℹ️",
-        Location = new Point(450, 470),
-        Size = new Size(35, 35),
-        FlatStyle = FlatStyle.Flat,
-        Font = new Font("Segoe UI", 12, FontStyle.Bold),
-        Cursor = Cursors.Hand,
-        BackColor = Color.FromArgb(240, 240, 245)
-      };
-      btnAbout.FlatAppearance.BorderColor = Color.LightGray;
-      btnAbout.Click += (s, e) =>
-      {
-        MessageBox.Show(
-          "CQLE MIGRATION AUTOMATOR v2.0\n\n" +
-          "Sistema Profissional de Migração SQL Server\n\n" +
-          "📦 Funcionalidades:\n" +
-          "  ✓ Migração de Bancos de Dados (Backup/Restore)\n" +
-          "  ✓ Migração de Linked Servers (SMO Scripting)\n" +
-          "  ✓ Migração de SQL Agent Jobs (SMO Scripting)\n" +
-          "  ✓ Modos Online e Offline\n" +
-          "  ✓ Logs detalhados exportáveis\n\n" +
-          "🛠️ Tecnologias:\n" +
-          "  • C# .NET\n" +
-          "  • ADO.NET (SqlClient)\n" +
-          "  • SQL Server Management Objects (SMO)\n\n" +
-          "Desenvolvido para operações profissionais de DBA",
-          "Sobre o Sistema",
-          MessageBoxButtons.OK,
-          MessageBoxIcon.Information
-        );
-      };
-      this.Controls.Add(btnAbout);
-
-      // --- LOG ---
+      // Log
       Label lblLog = new Label
       {
         Text = "📋 Log de Operações:",
-        Location = new Point(20, 515),
+        Location = new Point(20, 540),
         AutoSize = true,
         Font = new Font("Segoe UI", 9, FontStyle.Bold)
       };
@@ -393,15 +388,29 @@ namespace CQLE_MIGRACAO.Forms
         BackColor = Color.FromArgb(30, 30, 30),
         ForeColor = Color.FromArgb(0, 255, 0),
         Font = new Font("Consolas", 9F),
-        Location = new Point(20, 540),
-        Size = new Size(850, 90)
+        Location = new Point(20, 565),
+        Size = new Size(910, 115)
       };
       this.Controls.Add(txtLog);
+
+      // Rodapé
+      Label lblRodape = new Label
+      {
+        Text = "Desenvolvido por Marciano Silva - CQLE Softwares © 2025",
+        Location = new Point(0, 683),
+        Size = new Size(950, 17),
+        TextAlign = ContentAlignment.MiddleCenter,
+        Font = new Font("Segoe UI", 7),
+        ForeColor = Color.Gray,
+        BackColor = Color.FromArgb(240, 240, 245)
+      };
+      this.Controls.Add(lblRodape);
+
+      // Evento de fechamento
+      this.FormClosing += MigrationForm_FormClosing;
     }
 
-    // --- EVENTOS ---
-
-    private void BtnListar_Click(object? sender, EventArgs e)
+    private void BtnListar_Click(object sender, EventArgs e)
     {
       txtLog.Clear();
       AdicionarLog("═══════════════════════════════════════════════");
@@ -421,7 +430,6 @@ namespace CQLE_MIGRACAO.Forms
         var service = new UnifiedMigrationService(txtConnectionString.Text);
         var inventario = service.GetInventario();
 
-        // Bancos de Dados
         if (inventario.Databases.Count > 0)
         {
           foreach (var db in inventario.Databases)
@@ -437,7 +445,6 @@ namespace CQLE_MIGRACAO.Forms
           AdicionarLog("⚠️ Nenhum banco de usuário encontrado");
         }
 
-        // Linked Servers
         if (inventario.LinkedServers.Count > 0)
         {
           lblLinkedServersCount.Text = $"({inventario.LinkedServers.Count} encontrados)";
@@ -457,7 +464,6 @@ namespace CQLE_MIGRACAO.Forms
           AdicionarLog("ℹ️ Nenhum Linked Server encontrado");
         }
 
-        // Jobs
         if (inventario.Jobs.Count > 0)
         {
           lblJobsCount.Text = $"({inventario.Jobs.Count} encontrados)";
@@ -500,9 +506,8 @@ namespace CQLE_MIGRACAO.Forms
       }
     }
 
-    private void BtnExecutar_Click(object? sender, EventArgs e)
+    private void BtnExecutar_Click(object sender, EventArgs e)
     {
-      // Validações
       bool temAlgoSelecionado =
         clbDatabases.CheckedItems.Count > 0 ||
         chkLinkedServers.Checked ||
@@ -523,7 +528,6 @@ namespace CQLE_MIGRACAO.Forms
         return;
       }
 
-      // Dialog de destino
       DestinationDialog destDialog = new DestinationDialog();
       if (destDialog.ShowDialog() != DialogResult.OK)
       {
@@ -533,7 +537,6 @@ namespace CQLE_MIGRACAO.Forms
 
       string servidorDestino = destDialog.ServerName;
 
-      // Prepara configuração
       var config = new UnifiedMigrationService.MigrationConfig
       {
         DatabaseNames = clbDatabases.CheckedItems.Cast<string>().ToList(),
@@ -545,14 +548,12 @@ namespace CQLE_MIGRACAO.Forms
         PastaBackup = ""
       };
 
-      // Validação pasta offline
       if (rbOffline.Checked && string.IsNullOrEmpty(config.OutputPath))
       {
         AdicionarLog("⚠️ Pasta de saída não informada");
         return;
       }
 
-      // Confirmação final
       string resumo = $"Confirma a migração?\n\n" +
                      $"🎯 Destino: {servidorDestino}\n" +
                      $"📦 Bancos: {config.DatabaseNames.Count}\n" +
@@ -573,20 +574,16 @@ namespace CQLE_MIGRACAO.Forms
         return;
       }
 
-      // Abre tela de progresso
       try
       {
         var progressForm = new UnifiedProgressForm(txtConnectionString.Text, config);
-        this.Hide();
         progressForm.ShowDialog();
-        this.Show();
 
         AdicionarLog("✅ Processo de migração finalizado!");
         AdicionarLog("   Verifique os logs detalhados para mais informações.");
       }
       catch (Exception ex)
       {
-        this.Show();
         MessageBox.Show(
           $"Erro ao iniciar migração:\n\n{ex.Message}",
           "Erro",
@@ -611,6 +608,59 @@ namespace CQLE_MIGRACAO.Forms
         }
       }
       return "";
+    }
+
+    private void BtnSobre_Click(object sender, EventArgs e)
+    {
+      MessageBox.Show(
+        "CQLE MIGRAÇÃO v2.0\n\n" +
+        "Sistema Profissional de Migração SQL Server\n\n" +
+        "📦 Funcionalidades:\n" +
+        "  ✓ Migração de Bancos de Dados\n" +
+        "  ✓ Migração de Linked Servers\n" +
+        "  ✓ Migração de SQL Agent Jobs\n" +
+        "  ✓ Modos Online e Offline\n" +
+        "  ✓ Logs detalhados exportáveis\n\n" +
+        "Desenvolvido por Marciano Silva\n" +
+        "CQLE Softwares © 2025",
+        "Sobre o Sistema",
+        MessageBoxButtons.OK,
+        MessageBoxIcon.Information
+      );
+    }
+
+    private void BtnSair_Click(object sender, EventArgs e)
+    {
+      var resultado = MessageBox.Show(
+        "Deseja realmente sair do sistema?",
+        "Confirmar Saída",
+        MessageBoxButtons.YesNo,
+        MessageBoxIcon.Question
+      );
+
+      if (resultado == DialogResult.Yes)
+      {
+        Application.Exit();
+      }
+    }
+
+    private void MigrationForm_FormClosing(object sender, FormClosingEventArgs e)
+    {
+      var resultado = MessageBox.Show(
+        "Deseja realmente sair do sistema?",
+        "Confirmar Saída",
+        MessageBoxButtons.YesNo,
+        MessageBoxIcon.Question
+      );
+
+      if (resultado == DialogResult.No)
+      {
+        e.Cancel = true;
+      }
+      else
+      {
+        Application.Exit();
+      }
     }
 
     private void AdicionarLog(string mensagem)
