@@ -1,0 +1,22 @@
+# Build
+bin/
+obj/
+publish/
+
+# Executáveis
+*.exe
+
+# Banco / backup
+*.bak
+*.mdf
+*.ldf
+
+# Logs
+*.log
+
+# Visual Studio / VSCode
+.vs/
+.vscode/
+
+# OS
+Thumbs.db
