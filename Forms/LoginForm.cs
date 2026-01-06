@@ -13,7 +13,6 @@ namespace CQLE_MIGRACAO.Forms
     private Panel panelHeader;
     private Label lblTitulo;
     private Label lblSubtitulo;
-
     private GroupBox grpLogin;
     private Label lblServidor;
     private TextBox txtServidor;
@@ -21,10 +20,8 @@ namespace CQLE_MIGRACAO.Forms
     private TextBox txtUsuario;
     private Label lblSenha;
     private TextBox txtSenha;
-
     private Button btnEntrar;
     private Button btnSair;
-
     private Label lblRodape;
 
     public LoginForm()
@@ -33,24 +30,21 @@ namespace CQLE_MIGRACAO.Forms
 
       try
       {
-        this.Icon = new Icon("CQLE.ico");
+        this.Icon = new Icon("Assets/CQLE.ico");
       }
       catch { }
     }
 
     private void ConfigurarInterface()
     {
-      // FORM
       this.Text = "CQLE Migração - Login";
-      this.ClientSize = new Size(500, 520);
+      this.Size = new Size(500, 520);
       this.StartPosition = FormStartPosition.CenterScreen;
       this.FormBorderStyle = FormBorderStyle.FixedDialog;
       this.MaximizeBox = false;
       this.BackColor = Color.FromArgb(240, 240, 245);
 
-      // =========================
-      // CABEÇALHO
-      // =========================
+      // Cabeçalho
       panelHeader = new Panel
       {
         Dock = DockStyle.Top,
@@ -79,9 +73,7 @@ namespace CQLE_MIGRACAO.Forms
       panelHeader.Controls.Add(lblTitulo);
       panelHeader.Controls.Add(lblSubtitulo);
 
-      // =========================
-      // GRUPO LOGIN
-      // =========================
+      // Grupo Login
       grpLogin = new GroupBox
       {
         Text = "  Autenticação SQL Server  ",
@@ -117,8 +109,7 @@ namespace CQLE_MIGRACAO.Forms
       {
         Location = new Point(20, 110),
         Size = new Size(360, 25),
-        Font = new Font("Segoe UI", 10),
-        Text = "sa"
+        Font = new Font("Segoe UI", 10)
       };
 
       lblSenha = new Label
@@ -133,8 +124,7 @@ namespace CQLE_MIGRACAO.Forms
         Location = new Point(20, 165),
         Size = new Size(360, 25),
         Font = new Font("Segoe UI", 10),
-        PasswordChar = '●',
-        UseSystemPasswordChar = true
+        PasswordChar = '*'
       };
 
       grpLogin.Controls.Add(lblServidor);
@@ -144,15 +134,13 @@ namespace CQLE_MIGRACAO.Forms
       grpLogin.Controls.Add(lblSenha);
       grpLogin.Controls.Add(txtSenha);
 
-      // =========================
-      // BOTÕES
-      // =========================
+      // Botão Entrar
       btnEntrar = new Button
       {
         Text = "🔓 Entrar",
         Location = new Point(50, 355),
-        Size = new Size(250, 45),
-        BackColor = Color.FromArgb(0, 120, 0),
+        Size = new Size(140, 45),
+        BackColor = Color.FromArgb(0, 120, 215),
         ForeColor = Color.White,
         Font = new Font("Segoe UI", 11, FontStyle.Bold),
         FlatStyle = FlatStyle.Flat,
@@ -161,6 +149,7 @@ namespace CQLE_MIGRACAO.Forms
       btnEntrar.FlatAppearance.BorderSize = 0;
       btnEntrar.Click += BtnEntrar_Click;
 
+      // Botão Sair
       btnSair = new Button
       {
         Text = "❌ Sair",
@@ -175,9 +164,7 @@ namespace CQLE_MIGRACAO.Forms
       btnSair.FlatAppearance.BorderSize = 0;
       btnSair.Click += (s, e) => Application.Exit();
 
-      // =========================
-      // RODAPÉ (FIXO)
-      // =========================
+      // Rodapé
       lblRodape = new Label
       {
         Text = "Desenvolvido por Marciano Silva - CQLE Softwares © 2025",
@@ -188,16 +175,14 @@ namespace CQLE_MIGRACAO.Forms
         ForeColor = Color.Gray
       };
 
-      // =========================
-      // ADICIONA CONTROLES
-      // =========================
+      // Adiciona controles ao form
       this.Controls.Add(panelHeader);
       this.Controls.Add(grpLogin);
       this.Controls.Add(btnEntrar);
       this.Controls.Add(btnSair);
       this.Controls.Add(lblRodape);
 
-      // ENTER PARA LOGAR
+      // Enter para logar
       txtSenha.KeyPress += (s, e) =>
       {
         if (e.KeyChar == (char)Keys.Enter)
@@ -250,8 +235,27 @@ namespace CQLE_MIGRACAO.Forms
           return;
         }
 
+        MessageBox.Show(
+            "✅ Login validado com sucesso!\n\n" +
+            $"Servidor: {txtServidor.Text}\n" +
+            $"Usuário: {txtUsuario.Text}\n" +
+            "Permissões: SYSADMIN\n\n" +
+            "Bem-vindo ao CQLE Migração!",
+            "Autenticação Bem-Sucedida",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Information
+        );
+
         this.Hide();
-        var mainForm = new MigrationForm();
+
+        // Monta connection string e passa para MigrationForm
+        string connectionStringOrigem = $"Server={txtServidor.Text.Trim()};" +
+                                        $"Database=master;" +
+                                        $"User ID={txtUsuario.Text.Trim()};" +
+                                        $"Password={txtSenha.Text};" +
+                                        $"TrustServerCertificate=True;";
+
+        var mainForm = new MigrationForm(connectionStringOrigem);
         mainForm.FormClosed += (s, args) => this.Close();
         mainForm.Show();
       }

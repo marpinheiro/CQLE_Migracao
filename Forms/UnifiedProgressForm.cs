@@ -3,7 +3,6 @@ using System;
 using System.Drawing;
 using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using CQLE_MIGRACAO.Services;
 
@@ -14,27 +13,28 @@ namespace CQLE_MIGRACAO.Forms
     private ProgressBar pbGeral;
     private Label lblStatus;
     private RichTextBox txtLog;
-    private Button btnFechar;
-    private Button btnCancelar;
+    private Button btnInterromper;
     private Button btnSalvarLog;
+    private Button btnConcluir; // Renomeado para Concluir
     private Label lblPercentage;
-    private Panel panelStatus;
+    private Panel panelHeader;
 
-    private readonly string connectionString;
-    private readonly UnifiedMigrationService.MigrationConfig config;
-    private CancellationTokenSource cts;
+    private readonly UnifiedMigrationService _migrationService;
+    private readonly UnifiedMigrationService.MigrationConfig _config;
+    private CancellationTokenSource _cts;
 
-    public UnifiedProgressForm(string connString, UnifiedMigrationService.MigrationConfig cfg)
+    public UnifiedProgressForm(UnifiedMigrationService migrationService, UnifiedMigrationService.MigrationConfig config)
     {
-      connectionString = connString;
-      config = cfg;
+      _migrationService = migrationService;
+      _config = config;
 
       ConfigurarInterface();
-      this.Shown += async (s, e) => await IniciarProcesso();
+
+      this.Shown += (s, e) => IniciarProcesso();
 
       try
       {
-        this.Icon = new Icon("CQLE.ico");
+        this.Icon = new Icon("Assets/CQLE.ico");
       }
       catch { }
     }
@@ -42,314 +42,255 @@ namespace CQLE_MIGRACAO.Forms
     private void ConfigurarInterface()
     {
       this.Text = "CQLE Migração - Executando Migração";
-      this.Size = new Size(950, 700);
+      this.Size = new Size(950, 750);
+      this.MinimumSize = this.Size;
       this.StartPosition = FormStartPosition.CenterScreen;
       this.FormBorderStyle = FormBorderStyle.FixedDialog;
       this.MaximizeBox = false;
-      this.BackColor = Color.WhiteSmoke;
-      this.FormClosing += UnifiedProgressForm_FormClosing;
+      this.BackColor = Color.FromArgb(240, 240, 245);
 
-      panelStatus = new Panel
+      // Header
+      panelHeader = new Panel
       {
         Location = new Point(0, 0),
         Size = new Size(950, 80),
         BackColor = Color.FromArgb(0, 120, 215)
       };
 
+      var lblTitulo = new Label
+      {
+        Text = "🗄️ CQLE MIGRAÇÃO",
+        Location = new Point(20, 15),
+        Size = new Size(600, 30),
+        Font = new Font("Segoe UI", 18, FontStyle.Bold),
+        ForeColor = Color.White
+      };
+
+      var lblSubtitulo = new Label
+      {
+        Text = "Executando Migração",
+        Location = new Point(20, 50),
+        Size = new Size(600, 20),
+        Font = new Font("Segoe UI", 10),
+        ForeColor = Color.FromArgb(200, 220, 255)
+      };
+
+      panelHeader.Controls.Add(lblTitulo);
+      panelHeader.Controls.Add(lblSubtitulo);
+
       lblStatus = new Label
       {
-        Text = "Preparando...",
-        Location = new Point(20, 15),
-        Size = new Size(850, 25),
-        Font = new Font("Segoe UI", 12, FontStyle.Bold),
-        ForeColor = Color.White
+        Text = "Inicializando...",
+        Location = new Point(20, 100),
+        Size = new Size(700, 25),
+        Font = new Font("Segoe UI", 11, FontStyle.Bold)
       };
 
       lblPercentage = new Label
       {
         Text = "0%",
-        Location = new Point(870, 15),
+        Location = new Point(850, 100),
         Size = new Size(60, 25),
-        TextAlign = ContentAlignment.TopRight,
-        Font = new Font("Segoe UI", 12, FontStyle.Bold),
-        ForeColor = Color.White
+        TextAlign = ContentAlignment.MiddleRight,
+        Font = new Font("Segoe UI", 11, FontStyle.Bold)
       };
 
       pbGeral = new ProgressBar
       {
-        Location = new Point(20, 45),
-        Size = new Size(910, 25),
-        Style = ProgressBarStyle.Continuous
+        Location = new Point(20, 130),
+        Size = new Size(910, 30),
+        Style = ProgressBarStyle.Continuous,
+        Maximum = 100
       };
 
-      panelStatus.Controls.Add(lblStatus);
-      panelStatus.Controls.Add(lblPercentage);
-      panelStatus.Controls.Add(pbGeral);
-
-      Label lblLogTitle = new Label
+      var lblLogTitle = new Label
       {
         Text = "📋 Log Detalhado:",
-        Location = new Point(20, 90),
+        Location = new Point(20, 170),
         AutoSize = true,
         Font = new Font("Segoe UI", 10, FontStyle.Bold)
       };
 
       txtLog = new RichTextBox
       {
-        Location = new Point(20, 115),
-        Size = new Size(910, 480),
+        Location = new Point(20, 195),
+        Size = new Size(910, 400),
         ReadOnly = true,
         BackColor = Color.FromArgb(30, 30, 30),
         ForeColor = Color.LimeGreen,
-        Font = new Font("Consolas", 9),
+        Font = new Font("Consolas", 9.5f),
         ScrollBars = RichTextBoxScrollBars.Vertical
       };
 
+      // Botão Interromper
+      btnInterromper = new Button
+      {
+        Text = "⏹ Interromper",
+        Location = new Point(20, 610),
+        Size = new Size(180, 50),
+        Font = new Font("Segoe UI", 11, FontStyle.Bold),
+        BackColor = Color.FromArgb(200, 0, 0),
+        ForeColor = Color.White,
+        FlatStyle = FlatStyle.Flat
+      };
+      btnInterromper.Click += BtnInterromper_Click;
+
+      // Botão Salvar Log
       btnSalvarLog = new Button
       {
         Text = "💾 Salvar Log",
-        Location = new Point(20, 610),
-        Size = new Size(120, 40),
-        FlatStyle = FlatStyle.Flat,
+        Location = new Point(385, 610),
+        Size = new Size(180, 50),
+        Font = new Font("Segoe UI", 11, FontStyle.Bold),
         BackColor = Color.SteelBlue,
         ForeColor = Color.White,
-        Cursor = Cursors.Hand,
+        FlatStyle = FlatStyle.Flat,
         Enabled = false
       };
-      btnSalvarLog.FlatAppearance.BorderSize = 0;
       btnSalvarLog.Click += BtnSalvarLog_Click;
 
-      btnCancelar = new Button
+      // Botão Concluir (verde, principal)
+      btnConcluir = new Button
       {
-        Text = "⚠ Interromper",
-        Location = new Point(415, 610),
-        Size = new Size(120, 40),
-        FlatStyle = FlatStyle.Flat,
-        BackColor = Color.OrangeRed,
+        Text = "✅ Concluir",
+        Location = new Point(750, 610),
+        Size = new Size(180, 50),
+        Font = new Font("Segoe UI", 11, FontStyle.Bold),
+        BackColor = Color.FromArgb(0, 120, 0),
         ForeColor = Color.White,
-        Cursor = Cursors.Hand
-      };
-      btnCancelar.FlatAppearance.BorderSize = 0;
-      btnCancelar.Click += BtnCancelar_Click;
-
-      btnFechar = new Button
-      {
-        Text = "✓ Concluir",
-        Location = new Point(810, 610),
-        Size = new Size(120, 40),
         FlatStyle = FlatStyle.Flat,
-        BackColor = Color.SeaGreen,
-        ForeColor = Color.White,
-        Enabled = false,
-        Cursor = Cursors.Hand
+        Enabled = false
       };
-      btnFechar.FlatAppearance.BorderSize = 0;
-      btnFechar.Click += (s, e) => this.Close();
+      btnConcluir.Click += BtnConcluir_Click; // Fecha direto, sem pergunta
 
-      Label lblRodape = new Label
+      // Rodapé
+      var lblRodape = new Label
       {
         Text = "Desenvolvido por Marciano Silva - CQLE Softwares © 2025",
-        Location = new Point(0, 660),
-        Size = new Size(950, 15),
+        Dock = DockStyle.Bottom,
+        Height = 30,
         TextAlign = ContentAlignment.MiddleCenter,
-        Font = new Font("Segoe UI", 7),
+        Font = new Font("Segoe UI", 9),
         ForeColor = Color.Gray
       };
 
-      this.Controls.Add(panelStatus);
-      this.Controls.Add(lblLogTitle);
-      this.Controls.Add(txtLog);
-      this.Controls.Add(btnSalvarLog);
-      this.Controls.Add(btnCancelar);
-      this.Controls.Add(btnFechar);
-      this.Controls.Add(lblRodape);
+      this.Controls.AddRange(new Control[]
+      {
+                panelHeader, lblStatus, lblPercentage, pbGeral,
+                lblLogTitle, txtLog,
+                btnInterromper, btnSalvarLog, btnConcluir, lblRodape
+      });
     }
 
-    private async Task IniciarProcesso()
+    private void IniciarProcesso()
     {
-      if (config.DatabaseNames.Count > 0)
-      {
-        using (var fbd = new FolderBrowserDialog())
-        {
-          fbd.Description = "Escolha a pasta temporária para arquivos de backup (.bak):";
-          fbd.ShowNewFolderButton = true;
-          fbd.SelectedPath = @"C:\TempBackups";
+      _cts = new CancellationTokenSource();
 
-          if (fbd.ShowDialog() != DialogResult.OK)
-          {
-            AddLog("⚠ Cancelado pelo usuário - pasta de backup não informada");
-            FinalizarProcesso();
-            return;
-          }
+      btnInterromper.Enabled = true;
+      btnSalvarLog.Enabled = false;
+      btnConcluir.Enabled = false;
 
-          config.PastaBackup = fbd.SelectedPath;
-          AddLog($"📁 Pasta de trabalho: {config.PastaBackup}");
-        }
-      }
-
-      cts = new CancellationTokenSource();
-
-      AddLog("════════════════════════════════════════════════════");
-      AddLog("         INICIANDO MIGRAÇÃO UNIFICADA              ");
-      AddLog("════════════════════════════════════════════════════");
+      AddLog("╔════════════════════════════════════════════════════╗");
+      AddLog("║      CQLE MIGRAÇÃO - MIGRAÇÃO UNIFICADA INICIADA   ║");
+      AddLog("╚════════════════════════════════════════════════════╝");
       AddLog("");
 
-      try
+      Task.Run(() =>
       {
-        var service = new UnifiedMigrationService(connectionString);
-
-        await Task.Run(() =>
+        try
         {
-          service.ExecutarMigracaoCompleta(config, (msg) =>
-          {
-            if (cts.Token.IsCancellationRequested)
-              throw new OperationCanceledException();
-
-            this.Invoke(new Action(() => AddLog(msg)));
-          });
-        }, cts.Token);
-
-        this.Invoke(new Action(() =>
+          _migrationService.ExecutarMigracaoCompleta(_config, msg =>
+                {
+                this.Invoke(new Action(() => AddLog(msg)));
+              });
+        }
+        catch (Exception ex)
         {
-          lblStatus.Text = "✅ Migração Concluída com Sucesso!";
-          panelStatus.BackColor = Color.SeaGreen;
-          pbGeral.Value = pbGeral.Maximum;
-          lblPercentage.Text = "100%";
-          FinalizarProcesso();
-
-          MessageBox.Show(
-            "✅ Migração concluída com sucesso!\n\n" +
-            $"📦 Bancos: {config.DatabaseNames.Count}\n" +
-            $"🔗 Linked Servers: {(config.IncludeLinkedServers ? "Sim" : "Não")}\n" +
-            $"⏱️ Jobs: {(config.IncludeJobs ? "Sim" : "Não")}\n\n" +
-            "Verifique o log para detalhes.",
-            "Sucesso",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Information
-          );
-        }));
-      }
-      catch (OperationCanceledException)
-      {
-        this.Invoke(new Action(() =>
+          this.Invoke(new Action(() =>
+                {
+                AddLog($"ERRO CRÍTICO: {ex.Message}");
+              }));
+        }
+        finally
         {
-          lblStatus.Text = "⚠ Processo Interrompido";
-          panelStatus.BackColor = Color.OrangeRed;
-          AddLog("");
-          AddLog("═══ PROCESSO CANCELADO PELO USUÁRIO ═══");
-          FinalizarProcesso();
-        }));
-      }
-      catch (Exception ex)
-      {
-        this.Invoke(new Action(() =>
-        {
-          lblStatus.Text = "❌ Erro na Migração";
-          panelStatus.BackColor = Color.DarkRed;
-          AddLog("");
-          AddLog("════════════════════════════════════════════════════");
-          AddLog("                 ERRO CRÍTICO                      ");
-          AddLog("════════════════════════════════════════════════════");
-          AddLog($"Mensagem: {ex.Message}");
-          FinalizarProcesso();
-
-          MessageBox.Show(
-            $"❌ Erro durante a migração:\n\n{ex.Message}\n\n" +
-            "Verifique o log para mais detalhes.",
-            "Erro",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Error
-          );
-        }));
-      }
-      finally
-      {
-        cts = null;
-      }
+          this.Invoke(new Action(() => FinalizarProcesso()));
+        }
+      });
     }
 
     private void FinalizarProcesso()
     {
-      btnCancelar.Enabled = false;
+      btnInterromper.Enabled = false;
       btnSalvarLog.Enabled = true;
-      btnFechar.Enabled = true;
+      btnConcluir.Enabled = true;
+      lblStatus.Text = "Concluído";
+      lblPercentage.Text = "100%";
+      pbGeral.Value = 100;
+
+      AddLog("");
+      AddLog("╔════════════════════════════════════════════════════╗");
+      AddLog("║           MIGRAÇÃO CONCLUÍDA COM SUCESSO          ║");
+      AddLog("╚════════════════════════════════════════════════════╝");
     }
 
-    private void BtnCancelar_Click(object sender, EventArgs e)
+    private void BtnInterromper_Click(object sender, EventArgs e)
     {
-      if (cts != null && !cts.IsCancellationRequested)
+      if (_cts != null && !_cts.IsCancellationRequested)
       {
-        var resultado = MessageBox.Show(
-          "⚠ Deseja realmente interromper o processo?\n\n" +
-          "Os objetos já migrados permanecerão no destino,\n" +
-          "mas os pendentes não serão processados.",
-          "Confirmar Cancelamento",
-          MessageBoxButtons.YesNo,
-          MessageBoxIcon.Warning
-        );
+        var result = MessageBox.Show(
+            "Deseja interromper a migração?\n\nOs itens já processados permanecerão no destino.",
+            "Confirmar Interrupção",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Warning);
 
-        if (resultado == DialogResult.Yes)
+        if (result == DialogResult.Yes)
         {
-          cts.Cancel();
-          AddLog("⚠ CANCELAMENTO SOLICITADO - Aguarde...");
-          btnCancelar.Enabled = false;
+          _cts.Cancel();
+          AddLog("INTERRUPÇÃO SOLICITADA - Aguarde...");
+          btnInterromper.Enabled = false;
         }
       }
+    }
+
+    // Botão Concluir: fecha direto, sem pergunta
+    private void BtnConcluir_Click(object sender, EventArgs e)
+    {
+      this.Close();
     }
 
     private void BtnSalvarLog_Click(object sender, EventArgs e)
     {
-      using (var sfd = new SaveFileDialog())
+      using var sfd = new SaveFileDialog
       {
-        sfd.Filter = "Arquivo de Texto (*.txt)|*.txt|Todos os arquivos (*.*)|*.*";
-        sfd.FileName = $"Log_Migracao_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
-        sfd.Title = "Salvar Log da Migração";
+        Filter = "Texto (*.txt)|*.txt",
+        FileName = $"Log_Migracao_{DateTime.Now:yyyyMMdd_HHmmss}.txt"
+      };
 
-        if (sfd.ShowDialog() == DialogResult.OK)
-        {
-          try
-          {
-            File.WriteAllText(sfd.FileName, txtLog.Text);
-            MessageBox.Show(
-              $"✅ Log salvo com sucesso!\n\n{sfd.FileName}",
-              "Sucesso",
-              MessageBoxButtons.OK,
-              MessageBoxIcon.Information
-            );
-          }
-          catch (Exception ex)
-          {
-            MessageBox.Show(
-              $"❌ Erro ao salvar log:\n\n{ex.Message}",
-              "Erro",
-              MessageBoxButtons.OK,
-              MessageBoxIcon.Error
-            );
-          }
-        }
+      if (sfd.ShowDialog() == DialogResult.OK)
+      {
+        File.WriteAllText(sfd.FileName, txtLog.Text);
+        MessageBox.Show("Log salvo com sucesso!", "Sucesso", MessageBoxButtons.OK, MessageBoxIcon.Information);
       }
     }
 
+    // Só pergunta se fechar com X enquanto migração rodando
     private void UnifiedProgressForm_FormClosing(object sender, FormClosingEventArgs e)
     {
-      if (cts != null && !cts.IsCancellationRequested)
+      if (_cts != null && !_cts.IsCancellationRequested)
       {
-        var resultado = MessageBox.Show(
-          "⚠ A migração ainda está em execução!\n\n" +
-          "Fechar a tela irá CANCELAR o processo.\n\n" +
-          "Deseja realmente fechar?",
-          "Migração em Andamento",
-          MessageBoxButtons.YesNo,
-          MessageBoxIcon.Warning
-        );
+        var result = MessageBox.Show(
+            "A migração ainda está em execução!\n\nFechar a janela irá interromper o processo.\n\nDeseja continuar?",
+            "Migração em Andamento",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Warning);
 
-        if (resultado == DialogResult.No)
+        if (result == DialogResult.No)
         {
           e.Cancel = true;
         }
         else
         {
-          cts.Cancel();
+          _cts.Cancel();
         }
       }
     }
@@ -362,7 +303,7 @@ namespace CQLE_MIGRACAO.Forms
       }
       else
       {
-        txtLog.AppendText($"{msg}{Environment.NewLine}");
+        txtLog.AppendText($"[{DateTime.Now:HH:mm:ss}] {msg}{Environment.NewLine}");
         txtLog.SelectionStart = txtLog.Text.Length;
         txtLog.ScrollToCaret();
       }
