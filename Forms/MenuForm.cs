@@ -89,21 +89,20 @@ namespace CQLE_MIGRACAO.Forms
         updateForm.Show();
       };
 
-      // Botão Mover Arquivos de Banco
+      // Botão Mover Arquivos de Banco - ATUALIZADO
       var btnMoverArquivos = CriarBotaoGrande(
           "📂 Mover Arquivos de Banco",
-          "Mover arquivos .mdf e .ldf para outra pasta",
+          "Mover arquivos .mdf e .ldf ",
           Color.FromArgb(70, 130, 180),
           new Point(60, 400)
       );
       btnMoverArquivos.Click += (s, e) =>
       {
-        MessageBox.Show(
-                  "Funcionalidade em desenvolvimento.\n\n" +
-                  "Esta opção permitirá selecionar um banco, detach, mover os arquivos físicos (.mdf/.ldf) e attach novamente.",
-                  "Mover Arquivos de Banco",
-                  MessageBoxButtons.OK,
-                  MessageBoxIcon.Information);
+        // Abre o novo formulário de Mover Arquivos
+        this.Hide();
+        var moveForm = new MoveFilesForm(_connectionStringOrigem, _servidorOrigem, _usuarioOrigem);
+        moveForm.FormClosed += (s2, e2) => this.Show();
+        moveForm.Show();
       };
 
       var btnSair = new Button
