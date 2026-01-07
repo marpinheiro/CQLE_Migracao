@@ -1,51 +1,73 @@
-using System;
-using System.Diagnostics;
-using System.Windows.Forms;
 using CQLE_MIGRACAO.Forms;
+using CQLE_MIGRACAO.Services;
+using System;
+using System.Windows.Forms;
 
 namespace CQLE_MIGRACAO
 {
   internal static class Program
   {
-    /// <summary>
-    /// Ponto de entrada principal para o aplicativo.
-    /// </summary>
     [STAThread]
     static void Main()
     {
-      // 1. Verificação da versão do .NET (exige .NET 8.0)
-      if (Environment.Version.Major != 8)
+      ApplicationConfiguration.Initialize();
+
+      // ========================================================
+      // 🔒 LÓGICA DO TRIAL (30 DIAS NA MÁQUINA)
+      // ========================================================
+
+      // Verifica o status atual
+      var check = TrialSystem.CheckTrial(30); // 30 dias de período
+
+      if (check.status != TrialSystem.TrialStatus.Valid)
       {
-        MessageBox.Show(
-            "⚠️ ATENÇÃO: Versão do .NET incompatível!\n\n" +
-            "Este aplicativo foi compilado para o .NET 8.0.\n" +
-            $"Versão detectada: {Environment.Version}\n\n" +
-            "Por favor, instale o .NET 8.0 Runtime ou SDK para executar corretamente.\n\n" +
-            "Download oficial:\nhttps://dotnet.microsoft.com/pt-br/download/dotnet/8.0",
-            "CQLE Migração - Erro de Versão",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Error);
+        string msgErro = "";
+        string titulo = "Licença Inválida";
 
-        // Abre o link de download automaticamente
-        try
+        switch (check.status)
         {
-          Process.Start(new ProcessStartInfo
-          {
-            FileName = "https://dotnet.microsoft.com/pt-br/download/dotnet/8.0",
-            UseShellExecute = true
-          });
+          case TrialSystem.TrialStatus.Expired:
+            msgErro = "O período de testes de 30 dias expirou!\n\nPara continuar utilizando, adquira a licença.";
+            titulo = "Trial Expirado";
+            break;
+          case TrialSystem.TrialStatus.ClockTampered:
+            msgErro = "Data do sistema inconsistente.\nFoi detectada alteração no relógio do Windows para burlar o sistema.";
+            break;
+          case TrialSystem.TrialStatus.Corrupted:
+            msgErro = "Erro na validação da licença. Os arquivos de registro foram corrompidos ou alterados manualmente.";
+            break;
         }
-        catch { /* Ignora erro ao abrir navegador */ }
 
-        // Encerra o aplicativo
-        return;
+        MessageBox.Show(
+            msgErro + "\n\nContato: atendimento@cqle.com.br",
+            titulo,
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Error
+        );
+
+        return; // Fecha o programa
       }
 
-      // 2. Configurações padrão do Windows Forms
-      Application.EnableVisualStyles();
-      Application.SetCompatibleTextRenderingDefault(false);
+      // AVISO DE CONTAGEM REGRESSIVA (Só nos últimos 5 dias ou no primeiro)
+      if (check.daysLeft == 30)
+      {
+        MessageBox.Show(
+           "Obrigado por testar o CQLE Migração!\n\nSeu período de avaliação de 30 dias começou agora.",
+           "Bem-vindo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+      }
+      else if (check.daysLeft <= 5)
+      {
+        MessageBox.Show(
+           $"Atenção: Seu período de testes expira em {check.daysLeft} dias.",
+           "Trial", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+      }
+      // ========================================================
 
-      // 3. Inicia o aplicativo com a tela de Login
+      // SE PASSOU, ABRE O SISTEMA
+      // Importante: No seu código original você talvez chame o LoginForm primeiro
+      // Como não tenho o LoginForm aqui, vou chamar o Menu direto ou Login se você tiver.
+      // Ajuste abaixo conforme sua necessidade real:
+
       Application.Run(new LoginForm());
     }
   }
