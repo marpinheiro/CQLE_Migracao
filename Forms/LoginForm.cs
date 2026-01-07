@@ -248,16 +248,16 @@ namespace CQLE_MIGRACAO.Forms
 
         this.Hide();
 
-        // Monta connection string e passa para MigrationForm
+        // Monta connection string 
         string connectionStringOrigem = $"Server={txtServidor.Text.Trim()};" +
                                         $"Database=master;" +
                                         $"User ID={txtUsuario.Text.Trim()};" +
                                         $"Password={txtSenha.Text};" +
                                         $"TrustServerCertificate=True;";
 
-        var mainForm = new MigrationForm(connectionStringOrigem);
-        mainForm.FormClosed += (s, args) => this.Close();
-        mainForm.Show();
+        var menuForm = new MenuForm(connectionStringOrigem);
+        menuForm.FormClosed += (s, args) => this.Close();
+        menuForm.Show();
       }
       catch (Exception ex)
       {

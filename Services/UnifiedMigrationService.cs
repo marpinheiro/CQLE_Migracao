@@ -7,6 +7,7 @@ namespace CQLE_MIGRACAO.Services
 {
   public class UnifiedMigrationService
   {
+    public string ConnectionStringOrigem => _connectionStringOrigem;
     private readonly string _connectionStringOrigem;
     private readonly MigrationEngine _databaseEngine;
     private readonly LinkedServerMigrationService _linkedServerService;
