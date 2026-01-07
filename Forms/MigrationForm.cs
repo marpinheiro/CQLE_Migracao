@@ -4,18 +4,12 @@ using System.Drawing;
 using System.Windows.Forms;
 using CQLE_MIGRACAO.Services;
 using System.Collections.Generic;
+using Microsoft.Data.SqlClient;
 
 namespace CQLE_MIGRACAO.Forms
 {
   public class MigrationForm : Form
   {
-    private Panel panelHeader;
-    private Label lblTitulo;
-    private Label lblSubtitulo;
-    private GroupBox grpOrigem;
-    private GroupBox grpDestino;
-    private GroupBox grpOpcoes;
-    private GroupBox grpObjetos;
     private CheckedListBox lstBancos;
     private TextBox txtServidorDestino;
     private TextBox txtPastaBackup;
@@ -27,14 +21,20 @@ namespace CQLE_MIGRACAO.Forms
     private Button btnDesmarcarTodos;
     private Button btnIniciar;
     private Button btnVoltar;
-    private Label lblRodape;
+    private Button btnConectarDestino;
 
     private readonly UnifiedMigrationService _migrationService;
     private readonly List<string> _todosBancos = new List<string>();
+    private string _connectionStringDestino;
 
-    public MigrationForm(string connectionStringOrigem)
+    private readonly string _servidorOrigem;
+    private readonly string _usuarioOrigem;
+
+    public MigrationForm(string connectionStringOrigem, string servidorOrigem, string usuarioOrigem)
     {
       _migrationService = new UnifiedMigrationService(connectionStringOrigem);
+      _servidorOrigem = servidorOrigem;
+      _usuarioOrigem = usuarioOrigem;
 
       InitializeComponent();
       CarregarInventario();
@@ -42,268 +42,289 @@ namespace CQLE_MIGRACAO.Forms
 
     private void InitializeComponent()
     {
-      this.Text = "CQLE Migração - Configuração";
-      this.Size = new Size(950, 750);
-      this.MinimumSize = new Size(950, 750);
+      this.Text = "CQLE Migração - Migração Completa";
       this.StartPosition = FormStartPosition.CenterScreen;
+      this.WindowState = FormWindowState.Maximized;
+      this.MinimumSize = new Size(900, 600);
       this.FormBorderStyle = FormBorderStyle.Sizable;
-      this.MaximizeBox = true;
-      this.BackColor = Color.FromArgb(240, 240, 245);
+      this.BackColor = Color.WhiteSmoke;
+      this.Font = new Font("Segoe UI", 10F);
 
-      try
-      {
-        this.Icon = new Icon("Assets/CQLE.ico");
-      }
-      catch { }
+      try { this.Icon = new Icon("Assets/CQLE.ico"); } catch { }
 
-      // Header
-      panelHeader = new Panel
+      // === CABEÇALHO AZUL ===
+      var panelHeader = new Panel
       {
-        Location = new Point(0, 0),
-        Size = new Size(950, 80),
+        Dock = DockStyle.Top,
+        Height = 140,
         BackColor = Color.FromArgb(0, 120, 215)
       };
 
-      lblTitulo = new Label
+      var lblTitulo = new Label
       {
         Text = "🗄️ CQLE MIGRAÇÃO",
-        Location = new Point(20, 15),
-        Size = new Size(600, 30),
-        Font = new Font("Segoe UI", 18, FontStyle.Bold),
-        ForeColor = Color.White
-      };
-
-      lblSubtitulo = new Label
-      {
-        Text = "Sistema Profissional de Migração SQL Server",
-        Location = new Point(20, 50),
-        Size = new Size(600, 20),
-        Font = new Font("Segoe UI", 10),
-        ForeColor = Color.FromArgb(200, 220, 255)
-      };
-
-      panelHeader.Controls.Add(lblTitulo);
-      panelHeader.Controls.Add(lblSubtitulo);
-
-      // Grupo Origem
-      grpOrigem = new GroupBox
-      {
-        Text = " Origem (Conectado) ",
-        Location = new Point(20, 100),
-        Size = new Size(910, 70),
-        Font = new Font("Segoe UI", 10, FontStyle.Bold),
-        ForeColor = Color.FromArgb(0, 120, 215)
-      };
-
-      Label lblOrigemInfo = new Label
-      {
-        Text = "Servidor de origem já conectado via login. Todos os objetos serão lidos daqui.",
-        Location = new Point(15, 25),
-        Size = new Size(880, 30),
-        Font = new Font("Segoe UI", 9.5f)
-      };
-      grpOrigem.Controls.Add(lblOrigemInfo);
-
-      // Grupo Destino - LAYOUT MELHORADO
-      grpDestino = new GroupBox
-      {
-        Text = " Destino ",
-        Location = new Point(20, 190),
-        Size = new Size(910, 160),
-        Font = new Font("Segoe UI", 10, FontStyle.Bold),
-        ForeColor = Color.FromArgb(0, 120, 215)
-      };
-
-      // Linha 1: Servidor Destino
-      Label lblServidor = new Label
-      {
-        Text = "Servidor Destino:",
-        Location = new Point(20, 30),
+        ForeColor = Color.White,
+        Font = new Font("Segoe UI", 28F, FontStyle.Bold),
         AutoSize = true,
-        Font = new Font("Segoe UI", 10)
+        Location = new Point(40, 30)
       };
 
-      txtServidorDestino = new TextBox
+      var lblSubtitulo = new Label
       {
-        Location = new Point(20, 55),
-        Size = new Size(870, 28),
-        Font = new Font("Segoe UI", 10)
-      };
-
-      // Linha 2: Pasta de Backup
-      Label lblBackup = new Label
-      {
-        Text = "Pasta de Backup:",
-        Location = new Point(20, 95),
+        Text = "Migração Completa para Servidor Novo ou Limpo",
+        ForeColor = Color.FromArgb(200, 220, 255),
+        Font = new Font("Segoe UI", 14F),
         AutoSize = true,
-        Font = new Font("Segoe UI", 10)
+        Location = new Point(42, 85)
       };
 
-      txtPastaBackup = new TextBox
+      panelHeader.Controls.AddRange(new Control[] { lblTitulo, lblSubtitulo });
+
+      // === CONTEÚDO PRINCIPAL ===
+      var panelMain = new Panel
       {
-        Location = new Point(20, 120),
-        Size = new Size(800, 28),
-        Font = new Font("Segoe UI", 10)
+        Dock = DockStyle.Fill,
+        Padding = new Padding(40, 30, 40, 30),
+        AutoScroll = true
       };
 
-      Button btnBrowseBackup = new Button
+      var tableLayout = new TableLayoutPanel
       {
-        Text = "...",
-        Location = new Point(830, 120),
-        Size = new Size(60, 28),
-        Font = new Font("Segoe UI", 10, FontStyle.Bold)
-      };
-      btnBrowseBackup.Click += (s, e) =>
-      {
-        using var fbd = new FolderBrowserDialog();
-        if (fbd.ShowDialog() == DialogResult.OK)
-          txtPastaBackup.Text = fbd.SelectedPath;
-      };
-
-      // Linha 3: Pasta para Scripts de Backup
-      Label lblOutput = new Label
-      {
-        Text = "Pasta para Scripts de Backup:",
-        Location = new Point(20, 160),
+        Dock = DockStyle.Top,
         AutoSize = true,
-        Font = new Font("Segoe UI", 10)
+        ColumnCount = 1,
+        RowCount = 5,
+        Padding = new Padding(0, 0, 0, 40)
       };
 
-      txtPastaOutput = new TextBox
+      // Grupo Destino
+      var grpDestino = new GroupBox
       {
-        Location = new Point(20, 185),
-        Size = new Size(800, 28),
-        Font = new Font("Segoe UI", 10)
+        Text = "🎯 Configurações do Servidor Destino",
+        Dock = DockStyle.Top,
+        Height = 240,
+        Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+        ForeColor = Color.FromArgb(0, 120, 215),
+        Padding = new Padding(20)
       };
 
-      Button btnBrowseOutput = new Button
-      {
-        Text = "...",
-        Location = new Point(830, 185),
-        Size = new Size(60, 28),
-        Font = new Font("Segoe UI", 10, FontStyle.Bold)
-      };
-      btnBrowseOutput.Click += (s, e) =>
-      {
-        using var fbd = new FolderBrowserDialog();
-        if (fbd.ShowDialog() == DialogResult.OK)
-          txtPastaOutput.Text = fbd.SelectedPath;
-      };
+      var lblServidor = new Label { Text = "Servidor Destino:", AutoSize = true, Font = new Font("Segoe UI", 10F, FontStyle.Bold), Location = new Point(20, 30) };
+      txtServidorDestino = new TextBox { Location = new Point(20, 55), Width = 600, Height = 30, ReadOnly = true };
 
-      grpDestino.Controls.AddRange(new Control[]
+      btnConectarDestino = new Button
       {
-                lblServidor, txtServidorDestino,
-                lblBackup, txtPastaBackup, btnBrowseBackup,
-                lblOutput, txtPastaOutput, btnBrowseOutput
-      });
+        Text = "🔌 Conectar",
+        Location = new Point(630, 53),
+        Size = new Size(180, 35),
+        BackColor = Color.FromArgb(0, 120, 215),
+        ForeColor = Color.White,
+        FlatStyle = FlatStyle.Flat,
+        Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+        Cursor = Cursors.Hand
+      };
+      btnConectarDestino.FlatAppearance.BorderSize = 0;
+      btnConectarDestino.Click += BtnConectarDestino_Click;
+
+      txtPastaBackup = CriarCampoPasta(grpDestino, "Pasta para Arquivos de Backup (.bak):", 20, 100, "");
+      txtPastaOutput = CriarCampoPasta(grpDestino, "Pasta para Scripts Offline (opcional):", 20, 150, "");
+
+      grpDestino.Controls.AddRange(new Control[] { lblServidor, txtServidorDestino, btnConectarDestino });
+      tableLayout.Controls.Add(grpDestino, 0, 0);
 
       // Grupo Opções
-      grpOpcoes = new GroupBox
+      var grpOpcoes = new GroupBox
       {
-        Text = " Opções de Migração ",
-        Location = new Point(20, 370),
-        Size = new Size(910, 100),
-        Font = new Font("Segoe UI", 10, FontStyle.Bold),
-        ForeColor = Color.FromArgb(0, 120, 215)
+        Text = "⚙️ Opções Adicionais de Migração",
+        Dock = DockStyle.Top,
+        Height = 120,
+        Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+        ForeColor = Color.FromArgb(0, 120, 215),
+        Padding = new Padding(20)
       };
 
-      chkMigrarJobs = new CheckBox { Text = "🔧 Migrar SQL Agent Jobs", Location = new Point(20, 30), Size = new Size(280, 30), Checked = true, Font = new Font("Segoe UI", 10) };
-      chkMigrarLinkedServers = new CheckBox { Text = "🔗 Migrar Linked Servers", Location = new Point(20, 65), Size = new Size(280, 30), Checked = true, Font = new Font("Segoe UI", 10) };
-      chkMigrarLogins = new CheckBox { Text = "🔑 Migrar Logins do Servidor", Location = new Point(320, 30), Size = new Size(300, 30), Checked = true, Font = new Font("Segoe UI", 10) };
+      chkMigrarJobs = new CheckBox { Text = "📅 Migrar Jobs do Agendador", Location = new Point(20, 35), Checked = true };
+      chkMigrarLinkedServers = new CheckBox { Text = "🔗 Migrar Linked Servers", Location = new Point(20, 70), Checked = true };
+      chkMigrarLogins = new CheckBox { Text = "🔑 Migrar Logins do Servidor", Location = new Point(400, 35), Checked = true };
 
       grpOpcoes.Controls.AddRange(new Control[] { chkMigrarJobs, chkMigrarLinkedServers, chkMigrarLogins });
+      tableLayout.Controls.Add(grpOpcoes, 0, 1);
 
       // Grupo Bancos
-      grpObjetos = new GroupBox
+      var grpBancos = new GroupBox
       {
-        Text = " Bancos de Dados Disponíveis ",
-        Location = new Point(20, 480),
-        Size = new Size(910, 180),
-        Font = new Font("Segoe UI", 10, FontStyle.Bold),
-        ForeColor = Color.FromArgb(0, 120, 215)
+        Text = "🗃️ Bancos de Dados Disponíveis",
+        Dock = DockStyle.Top,
+        Height = 280,
+        Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+        ForeColor = Color.FromArgb(0, 120, 215),
+        Padding = new Padding(20)
       };
 
       lstBancos = new CheckedListBox
       {
-        Location = new Point(20, 30),
-        Size = new Size(650, 130),
-        Font = new Font("Segoe UI", 10),
-        CheckOnClick = true
+        Dock = DockStyle.Fill,
+        CheckOnClick = true,
+        Margin = new Padding(0, 0, 250, 0)
       };
+
+      var panelBotoesBancos = new Panel { Dock = DockStyle.Right, Width = 250 };
 
       btnSelecionarTodos = new Button
       {
         Text = "Selecionar Todos",
-        Location = new Point(690, 40),
-        Size = new Size(200, 35),
-        BackColor = Color.FromArgb(0, 120, 0),
+        Size = new Size(220, 45),
+        Location = new Point(15, 50),
+        BackColor = Color.FromArgb(0, 150, 0),
         ForeColor = Color.White,
-        Font = new Font("Segoe UI", 10, FontStyle.Bold),
-        FlatStyle = FlatStyle.Flat
+        FlatStyle = FlatStyle.Flat,
+        Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+        Cursor = Cursors.Hand
       };
+      btnSelecionarTodos.FlatAppearance.BorderSize = 0;
       btnSelecionarTodos.Click += (s, e) =>
       {
-        for (int i = 0; i < lstBancos.Items.Count; i++) lstBancos.SetItemChecked(i, true);
+        for (int i = 0; i < lstBancos.Items.Count; i++)
+          lstBancos.SetItemChecked(i, true);
       };
 
       btnDesmarcarTodos = new Button
       {
         Text = "Desmarcar Todos",
-        Location = new Point(690, 85),
-        Size = new Size(200, 35),
+        Size = new Size(220, 45),
+        Location = new Point(15, 110),
         BackColor = Color.FromArgb(180, 0, 0),
         ForeColor = Color.White,
-        Font = new Font("Segoe UI", 10, FontStyle.Bold),
-        FlatStyle = FlatStyle.Flat
+        FlatStyle = FlatStyle.Flat,
+        Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+        Cursor = Cursors.Hand
       };
+      btnDesmarcarTodos.FlatAppearance.BorderSize = 0;
       btnDesmarcarTodos.Click += (s, e) =>
       {
-        for (int i = 0; i < lstBancos.Items.Count; i++) lstBancos.SetItemChecked(i, false);
+        for (int i = 0; i < lstBancos.Items.Count; i++)
+          lstBancos.SetItemChecked(i, false);
       };
 
-      grpObjetos.Controls.AddRange(new Control[] { lstBancos, btnSelecionarTodos, btnDesmarcarTodos });
+      panelBotoesBancos.Controls.AddRange(new Control[] { btnSelecionarTodos, btnDesmarcarTodos });
+
+      grpBancos.Controls.Add(lstBancos);
+      grpBancos.Controls.Add(panelBotoesBancos);
+      tableLayout.Controls.Add(grpBancos, 0, 2);
 
       // Botões principais
+      var panelBotoes = new Panel { Dock = DockStyle.Top, Height = 100 };
       btnIniciar = new Button
       {
-        Text = "🚀 Iniciar Migração",
-        Location = new Point(20, 680),
-        Size = new Size(300, 50),
-        BackColor = Color.FromArgb(0, 120, 0),
+        Text = "🚀 Iniciar Migração Completa",
+        Size = new Size(400, 60),
+        Location = new Point(50, 20),
+        Font = new Font("Segoe UI", 14F, FontStyle.Bold),
+        BackColor = Color.FromArgb(0, 120, 215),
         ForeColor = Color.White,
-        Font = new Font("Segoe UI", 12, FontStyle.Bold),
-        FlatStyle = FlatStyle.Flat
+        FlatStyle = FlatStyle.Flat,
+        Enabled = false
       };
+      btnIniciar.FlatAppearance.BorderSize = 0;
       btnIniciar.Click += BtnIniciar_Click;
 
       btnVoltar = new Button
       {
-        Text = "⬅ Voltar",
-        Location = new Point(630, 680),
-        Size = new Size(300, 50),
+        Text = "⬅ Voltar ao Menu",
+        Size = new Size(350, 60),
+        Location = new Point(470, 20),
+        Font = new Font("Segoe UI", 14F, FontStyle.Bold),
         BackColor = Color.FromArgb(100, 100, 100),
         ForeColor = Color.White,
-        Font = new Font("Segoe UI", 12, FontStyle.Bold),
         FlatStyle = FlatStyle.Flat
       };
+      btnVoltar.FlatAppearance.BorderSize = 0;
       btnVoltar.Click += (s, e) => this.Close();
 
-      // Rodapé
-      lblRodape = new Label
+      panelBotoes.Controls.AddRange(new Control[] { btnIniciar, btnVoltar });
+      tableLayout.Controls.Add(panelBotoes, 0, 3);
+
+      panelMain.Controls.Add(tableLayout);
+
+      // === RODAPÉ COM INFORMAÇÃO DE CONEXÃO (sem corte) ===
+      var panelRodape = new Panel
       {
-        Text = "Desenvolvido por Marciano Silva - CQLE Softwares © 2025",
         Dock = DockStyle.Bottom,
-        Height = 30,
-        TextAlign = ContentAlignment.MiddleCenter,
-        Font = new Font("Segoe UI", 9),
-        ForeColor = Color.Gray
+        Height = 50,
+        BackColor = Color.FromArgb(245, 245, 245)
       };
 
-      this.Controls.AddRange(new Control[]
+      var tableRodape = new TableLayoutPanel
       {
-                panelHeader, grpOrigem, grpDestino, grpOpcoes, grpObjetos,
-                btnIniciar, btnVoltar, lblRodape
-      });
+        Dock = DockStyle.Fill,
+        ColumnCount = 2,
+        RowCount = 1,
+        Padding = new Padding(40, 10, 40, 10)
+      };
+      tableRodape.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 70F));
+      tableRodape.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30F));
+
+      var lblConexao = new Label
+      {
+        Text = $"✅ Conectado à Origem: {_servidorOrigem}  •  Usuário: {_usuarioOrigem}",
+        Font = new Font("Segoe UI", 10F),
+        ForeColor = Color.DarkGreen,
+        Dock = DockStyle.Fill,
+        TextAlign = ContentAlignment.MiddleLeft
+      };
+
+      var lblCopyright = new Label
+      {
+        Text = "Desenvolvido por Marciano Silva - CQLE Softwares © 2026",
+        Font = new Font("Segoe UI", 9F),
+        ForeColor = Color.Gray,
+        Dock = DockStyle.Fill,
+        TextAlign = ContentAlignment.MiddleRight
+      };
+
+      tableRodape.Controls.Add(lblConexao, 0, 0);
+      tableRodape.Controls.Add(lblCopyright, 1, 0);
+
+      panelRodape.Controls.Add(tableRodape);
+
+      // Montagem final
+      this.Controls.Add(panelMain);
+      this.Controls.Add(panelHeader);
+      this.Controls.Add(panelRodape);
+    }
+
+    private TextBox CriarCampoPasta(Control parent, string labelText, int x, int y, string valorInicial)
+    {
+      var lbl = new Label { Text = labelText, Location = new Point(x, y), AutoSize = true, Font = new Font("Segoe UI", 10F, FontStyle.Bold) };
+      var txt = new TextBox { Location = new Point(x, y + 25), Width = 650, Height = 30, Text = valorInicial };
+
+      var btn = new Button
+      {
+        Text = "...",
+        Location = new Point(x + 660, y + 23),
+        Size = new Size(40, 30)
+      };
+      btn.Click += (s, e) =>
+      {
+        using var fbd = new FolderBrowserDialog { SelectedPath = txt.Text };
+        if (fbd.ShowDialog() == DialogResult.OK) txt.Text = fbd.SelectedPath;
+      };
+
+      parent.Controls.AddRange(new Control[] { lbl, txt, btn });
+      return txt;
+    }
+
+    private void BtnConectarDestino_Click(object sender, EventArgs e)
+    {
+      using var frm = new DestinoConnectionForm();
+      if (frm.ShowDialog() == DialogResult.OK)
+      {
+        _connectionStringDestino = frm.ConnectionString;
+        var builder = new SqlConnectionStringBuilder(_connectionStringDestino);
+        txtServidorDestino.Text = builder.DataSource;
+
+        MessageBox.Show($"✅ Conectado com sucesso!\n\nServidor: {builder.DataSource}", "Conexão OK", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        btnIniciar.Enabled = true;
+      }
     }
 
     private void CarregarInventario()
@@ -312,17 +333,16 @@ namespace CQLE_MIGRACAO.Forms
       {
         var inventory = _migrationService.GetInventario();
         _todosBancos.AddRange(inventory.Databases);
-
         lstBancos.Items.Clear();
         foreach (var db in _todosBancos)
         {
-          if (db != "master" && db != "tempdb" && db != "model" && db != "msdb")
+          if (!new[] { "master", "tempdb", "model", "msdb" }.Contains(db))
             lstBancos.Items.Add(db);
         }
       }
       catch (Exception ex)
       {
-        MessageBox.Show($"Erro ao carregar inventário: {ex.Message}", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        MessageBox.Show($"Erro ao carregar bancos: {ex.Message}", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
       }
     }
 
@@ -330,13 +350,13 @@ namespace CQLE_MIGRACAO.Forms
     {
       if (lstBancos.CheckedItems.Count == 0)
       {
-        MessageBox.Show("Selecione pelo menos um banco de dados.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        MessageBox.Show("Selecione pelo menos um banco.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         return;
       }
 
-      if (string.IsNullOrWhiteSpace(txtServidorDestino.Text))
+      if (string.IsNullOrWhiteSpace(_connectionStringDestino))
       {
-        MessageBox.Show("Informe o servidor destino.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        MessageBox.Show("Conecte-se ao servidor destino primeiro.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         return;
       }
 

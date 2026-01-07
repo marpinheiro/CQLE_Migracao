@@ -10,179 +10,150 @@ namespace CQLE_MIGRACAO.Forms
 {
   public class LoginForm : Form
   {
-    private Panel panelHeader;
-    private Label lblTitulo;
-    private Label lblSubtitulo;
-    private GroupBox grpLogin;
-    private Label lblServidor;
     private TextBox txtServidor;
-    private Label lblUsuario;
     private TextBox txtUsuario;
-    private Label lblSenha;
     private TextBox txtSenha;
     private Button btnEntrar;
     private Button btnSair;
-    private Label lblRodape;
 
     public LoginForm()
     {
-      ConfigurarInterface();
-
-      try
-      {
-        this.Icon = new Icon("Assets/CQLE.ico");
-      }
-      catch { }
+      InitializeComponent();
     }
 
-    private void ConfigurarInterface()
+    private void InitializeComponent()
     {
-      this.Text = "CQLE Migração - Login";
-      this.Size = new Size(500, 520);
-      this.StartPosition = FormStartPosition.CenterScreen;
+      this.Text = "CQLE Migração - Autenticação";
+      this.Size = new Size(520, 580);
       this.FormBorderStyle = FormBorderStyle.FixedDialog;
       this.MaximizeBox = false;
-      this.BackColor = Color.FromArgb(240, 240, 245);
+      this.StartPosition = FormStartPosition.CenterScreen;
+      this.BackColor = Color.WhiteSmoke;
+      this.Font = new Font("Segoe UI", 10F);
 
-      // Cabeçalho
-      panelHeader = new Panel
+      try { this.Icon = new Icon("Assets/CQLE.ico"); } catch { }
+
+      // === CABEÇALHO AZUL ===
+      var panelHeader = new Panel
       {
         Dock = DockStyle.Top,
-        Height = 80,
+        Height = 140,
         BackColor = Color.FromArgb(0, 120, 215)
       };
 
-      lblTitulo = new Label
+      var lblTitulo = new Label
       {
         Text = "🗄️ CQLE MIGRAÇÃO",
-        Location = new Point(20, 15),
+        ForeColor = Color.White,
+        Font = new Font("Segoe UI", 24F, FontStyle.Bold),
         AutoSize = true,
-        Font = new Font("Segoe UI", 16, FontStyle.Bold),
-        ForeColor = Color.White
+        Location = new Point(30, 30)
       };
 
-      lblSubtitulo = new Label
+      var lblSubtitulo = new Label
       {
         Text = "Sistema Profissional de Migração SQL Server",
-        Location = new Point(22, 45),
+        ForeColor = Color.FromArgb(200, 220, 255),
+        Font = new Font("Segoe UI", 11F),
         AutoSize = true,
-        Font = new Font("Segoe UI", 9),
-        ForeColor = Color.FromArgb(200, 220, 255)
+        Location = new Point(32, 80)
       };
 
-      panelHeader.Controls.Add(lblTitulo);
-      panelHeader.Controls.Add(lblSubtitulo);
+      panelHeader.Controls.AddRange(new Control[] { lblTitulo, lblSubtitulo });
 
-      // Grupo Login
-      grpLogin = new GroupBox
+      // === GRUPO DE LOGIN ===
+      var grpLogin = new GroupBox
       {
-        Text = "  Autenticação SQL Server  ",
-        Size = new Size(400, 220),
-        Location = new Point(50, 110),
-        Font = new Font("Segoe UI", 10, FontStyle.Bold),
+        Text = "Autenticação SQL Server",
+        Location = new Point(40, 160),
+        Size = new Size(440, 240),
+        Font = new Font("Segoe UI", 11F, FontStyle.Bold),
         ForeColor = Color.FromArgb(0, 120, 215)
       };
 
-      lblServidor = new Label
-      {
-        Text = "Servidor:",
-        Location = new Point(20, 35),
-        AutoSize = true
-      };
-
+      var lblServidor = new Label { Text = "Servidor:", Location = new Point(30, 40), AutoSize = true };
       txtServidor = new TextBox
       {
-        Location = new Point(20, 55),
-        Size = new Size(360, 25),
-        Font = new Font("Segoe UI", 10),
+        Location = new Point(30, 65),
+        Size = new Size(380, 30),
         Text = "localhost"
       };
 
-      lblUsuario = new Label
-      {
-        Text = "Usuário:",
-        Location = new Point(20, 90),
-        AutoSize = true
-      };
-
+      var lblUsuario = new Label { Text = "Usuário:", Location = new Point(30, 110), AutoSize = true };
       txtUsuario = new TextBox
       {
-        Location = new Point(20, 110),
-        Size = new Size(360, 25),
-        Font = new Font("Segoe UI", 10)
+        Location = new Point(30, 135),
+        Size = new Size(380, 30)
       };
 
-      lblSenha = new Label
-      {
-        Text = "Senha:",
-        Location = new Point(20, 145),
-        AutoSize = true
-      };
-
+      var lblSenha = new Label { Text = "Senha:", Location = new Point(30, 180), AutoSize = true };
       txtSenha = new TextBox
       {
-        Location = new Point(20, 165),
-        Size = new Size(360, 25),
-        Font = new Font("Segoe UI", 10),
-        PasswordChar = '*'
+        Location = new Point(30, 205),
+        Size = new Size(380, 30),
+        PasswordChar = '*',
+        UseSystemPasswordChar = true
       };
 
-      grpLogin.Controls.Add(lblServidor);
-      grpLogin.Controls.Add(txtServidor);
-      grpLogin.Controls.Add(lblUsuario);
-      grpLogin.Controls.Add(txtUsuario);
-      grpLogin.Controls.Add(lblSenha);
-      grpLogin.Controls.Add(txtSenha);
+      grpLogin.Controls.AddRange(new Control[]
+      {
+                lblServidor, txtServidor,
+                lblUsuario, txtUsuario,
+                lblSenha, txtSenha
+      });
 
-      // Botão Entrar
+      // === BOTÕES ===
       btnEntrar = new Button
       {
         Text = "🔓 Entrar",
-        Location = new Point(50, 355),
-        Size = new Size(140, 45),
+        Location = new Point(40, 430),
+        Size = new Size(200, 50),
+        Font = new Font("Segoe UI", 12F, FontStyle.Bold),
         BackColor = Color.FromArgb(0, 120, 215),
         ForeColor = Color.White,
-        Font = new Font("Segoe UI", 11, FontStyle.Bold),
         FlatStyle = FlatStyle.Flat,
         Cursor = Cursors.Hand
       };
       btnEntrar.FlatAppearance.BorderSize = 0;
       btnEntrar.Click += BtnEntrar_Click;
 
-      // Botão Sair
       btnSair = new Button
       {
         Text = "❌ Sair",
-        Location = new Point(310, 355),
-        Size = new Size(140, 45),
-        BackColor = Color.FromArgb(120, 120, 120),
+        Location = new Point(280, 430),
+        Size = new Size(200, 50),
+        Font = new Font("Segoe UI", 12F, FontStyle.Bold),
+        BackColor = Color.FromArgb(180, 0, 0),
         ForeColor = Color.White,
-        Font = new Font("Segoe UI", 11, FontStyle.Bold),
         FlatStyle = FlatStyle.Flat,
         Cursor = Cursors.Hand
       };
       btnSair.FlatAppearance.BorderSize = 0;
       btnSair.Click += (s, e) => Application.Exit();
 
-      // Rodapé
-      lblRodape = new Label
+      // === RODAPÉ ===
+      var lblRodape = new Label
       {
-        Text = "Desenvolvido por Marciano Silva - CQLE Softwares © 2025",
+        Text = "Desenvolvido por Marciano Silva - CQLE Softwares © 2026",
         Dock = DockStyle.Bottom,
-        Height = 25,
+        Height = 40,
         TextAlign = ContentAlignment.MiddleCenter,
-        Font = new Font("Segoe UI", 8),
-        ForeColor = Color.Gray
+        Font = new Font("Segoe UI", 9F),
+        ForeColor = Color.Gray,
+        BackColor = Color.FromArgb(240, 240, 245)
       };
 
-      // Adiciona controles ao form
-      this.Controls.Add(panelHeader);
-      this.Controls.Add(grpLogin);
-      this.Controls.Add(btnEntrar);
-      this.Controls.Add(btnSair);
-      this.Controls.Add(lblRodape);
+      // === MONTAGEM FINAL ===
+      this.Controls.AddRange(new Control[]
+      {
+                panelHeader,
+                grpLogin,
+                btnEntrar,
+                btnSair,
+                lblRodape
+      });
 
-      // Enter para logar
+      // Enter no campo senha para logar
       txtSenha.KeyPress += (s, e) =>
       {
         if (e.KeyChar == (char)Keys.Enter)
@@ -201,12 +172,7 @@ namespace CQLE_MIGRACAO.Forms
           string.IsNullOrWhiteSpace(txtUsuario.Text) ||
           string.IsNullOrWhiteSpace(txtSenha.Text))
       {
-        MessageBox.Show(
-            "Preencha todos os campos.",
-            "Validação",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Warning
-        );
+        MessageBox.Show("Preencha todos os campos.", "Validação", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         return;
       }
 
@@ -226,47 +192,36 @@ namespace CQLE_MIGRACAO.Forms
 
         if (!SqlSecurityService.IsSysAdmin(conn))
         {
-          MessageBox.Show(
-              "O usuário não possui permissão SYSADMIN.",
-              "Acesso Negado",
-              MessageBoxButtons.OK,
-              MessageBoxIcon.Error
-          );
+          MessageBox.Show("O usuário não possui permissão SYSADMIN.", "Acesso Negado", MessageBoxButtons.OK, MessageBoxIcon.Error);
           return;
         }
 
         MessageBox.Show(
             "✅ Login validado com sucesso!\n\n" +
-            $"Servidor: {txtServidor.Text}\n" +
-            $"Usuário: {txtUsuario.Text}\n" +
+            $"Servidor: {txtServidor.Text.Trim()}\n" +
+            $"Usuário: {txtUsuario.Text.Trim()}\n" +
             "Permissões: SYSADMIN\n\n" +
             "Bem-vindo ao CQLE Migração!",
             "Autenticação Bem-Sucedida",
             MessageBoxButtons.OK,
-            MessageBoxIcon.Information
-        );
+            MessageBoxIcon.Information);
 
         this.Hide();
 
-        // Monta connection string 
         string connectionStringOrigem = $"Server={txtServidor.Text.Trim()};" +
                                         $"Database=master;" +
                                         $"User ID={txtUsuario.Text.Trim()};" +
                                         $"Password={txtSenha.Text};" +
                                         $"TrustServerCertificate=True;";
 
-        var menuForm = new MenuForm(connectionStringOrigem);
+        // PASSA SERVIDOR E USUÁRIO PARA O MENU
+        var menuForm = new MenuForm(connectionStringOrigem, txtServidor.Text.Trim(), txtUsuario.Text.Trim());
         menuForm.FormClosed += (s, args) => this.Close();
         menuForm.Show();
       }
       catch (Exception ex)
       {
-        MessageBox.Show(
-            $"Erro ao conectar:\n\n{ex.Message}",
-            "Erro",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Error
-        );
+        MessageBox.Show($"Erro ao conectar:\n\n{ex.Message}", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
       }
       finally
       {

@@ -7,136 +7,166 @@ namespace CQLE_MIGRACAO.Forms
 {
   public class MenuForm : Form
   {
-    private Panel panelHeader;
-    private Label lblTitulo;
-    private Label lblSubtitulo;
-    private Button btnMigracao;
-    private Button btnAtualizacao;
-    private Button btnSair;
-    private Label lblRodape;
-
     private readonly string _connectionStringOrigem;
+    private readonly string _servidorOrigem;
+    private readonly string _usuarioOrigem;
 
-    public MenuForm(string connectionStringOrigem)
+    public MenuForm(string connectionStringOrigem, string servidorOrigem, string usuarioOrigem)
     {
       _connectionStringOrigem = connectionStringOrigem;
+      _servidorOrigem = servidorOrigem;
+      _usuarioOrigem = usuarioOrigem;
 
-      ConfigurarInterface();
+      InitializeComponent();
     }
 
-    private void ConfigurarInterface()
+    private void InitializeComponent()
     {
       this.Text = "CQLE Migração - Menu Principal";
-      this.Size = new Size(600, 450);
-      this.StartPosition = FormStartPosition.CenterScreen;
+      this.Size = new Size(620, 680);
       this.FormBorderStyle = FormBorderStyle.FixedDialog;
       this.MaximizeBox = false;
-      this.BackColor = Color.FromArgb(240, 240, 245);
+      this.StartPosition = FormStartPosition.CenterScreen;
+      this.BackColor = Color.WhiteSmoke;
+      this.Font = new Font("Segoe UI", 10F);
 
-      try
-      {
-        this.Icon = new Icon("Assets/CQLE.ico");
-      }
-      catch { }
+      try { this.Icon = new Icon("Assets/CQLE.ico"); } catch { }
 
-      // Header
-      panelHeader = new Panel
+      // === CABEÇALHO AZUL ===
+      var panelHeader = new Panel
       {
         Dock = DockStyle.Top,
-        Height = 80,
+        Height = 140,
         BackColor = Color.FromArgb(0, 120, 215)
       };
 
-      lblTitulo = new Label
+      var lblTitulo = new Label
       {
         Text = "🗄️ CQLE MIGRAÇÃO",
-        Location = new Point(20, 15),
+        ForeColor = Color.White,
+        Font = new Font("Segoe UI", 24F, FontStyle.Bold),
         AutoSize = true,
-        Font = new Font("Segoe UI", 16, FontStyle.Bold),
-        ForeColor = Color.White
+        Location = new Point(30, 30)
       };
 
-      lblSubtitulo = new Label
+      var lblSubtitulo = new Label
       {
         Text = "Escolha a operação desejada",
-        Location = new Point(20, 45),
+        ForeColor = Color.FromArgb(200, 220, 255),
+        Font = new Font("Segoe UI", 12F),
         AutoSize = true,
-        Font = new Font("Segoe UI", 10),
-        ForeColor = Color.FromArgb(200, 220, 255)
+        Location = new Point(32, 80)
       };
 
-      panelHeader.Controls.Add(lblTitulo);
-      panelHeader.Controls.Add(lblSubtitulo);
+      panelHeader.Controls.AddRange(new Control[] { lblTitulo, lblSubtitulo });
 
-      // Botão Migração Completa
-      btnMigracao = new Button
-      {
-        Text = "🔄 Migração Completa\n(Servidor novo ou limpo)",
-        Location = new Point(100, 120),
-        Size = new Size(400, 80),
-        Font = new Font("Segoe UI", 12, FontStyle.Bold),
-        BackColor = Color.FromArgb(0, 120, 215),
-        ForeColor = Color.White,
-        FlatStyle = FlatStyle.Flat,
-        TextAlign = ContentAlignment.MiddleCenter
-      };
-      btnMigracao.Click += (s, e) =>
+      // === BOTÕES CENTRAIS ===
+      var btnMigracaoCompleta = CriarBotaoGrande(
+          "🔄 Migração Completa",
+          "Para servidor novo ou limpo",
+          Color.FromArgb(0, 120, 215),
+          new Point(60, 180)
+      );
+      btnMigracaoCompleta.Click += (s, e) =>
       {
         this.Hide();
-        var migrationForm = new MigrationForm(_connectionStringOrigem);
+        var migrationForm = new MigrationForm(_connectionStringOrigem, _servidorOrigem, _usuarioOrigem);
         migrationForm.FormClosed += (s2, e2) => this.Show();
         migrationForm.Show();
       };
 
-      // Botão Atualização de Base Teste
-      btnAtualizacao = new Button
-      {
-        Text = "🔄 Atualização de Base Teste\n(Substituir ou criar novo)",
-        Location = new Point(100, 220),
-        Size = new Size(400, 80),
-        Font = new Font("Segoe UI", 12, FontStyle.Bold),
-        BackColor = Color.FromArgb(0, 150, 0),
-        ForeColor = Color.White,
-        FlatStyle = FlatStyle.Flat,
-        TextAlign = ContentAlignment.MiddleCenter
-      };
-      btnAtualizacao.Click += (s, e) =>
+      var btnAtualizacaoTeste = CriarBotaoGrande(
+          "🔄 Atualização de Base Teste",
+          "Substituir ou criar novo banco",
+          Color.FromArgb(0, 150, 0),
+          new Point(60, 290)
+      );
+      btnAtualizacaoTeste.Click += (s, e) =>
       {
         this.Hide();
-        var updateForm = new UpdateForm(_connectionStringOrigem);
+        var updateForm = new UpdateForm(_connectionStringOrigem, _servidorOrigem, _usuarioOrigem);
         updateForm.FormClosed += (s2, e2) => this.Show();
         updateForm.Show();
       };
 
-      // Botão Sair
-      btnSair = new Button
+      // Botão Mover Arquivos de Banco
+      var btnMoverArquivos = CriarBotaoGrande(
+          "📂 Mover Arquivos de Banco",
+          "Mover arquivos .mdf e .ldf para outra pasta",
+          Color.FromArgb(70, 130, 180),
+          new Point(60, 400)
+      );
+      btnMoverArquivos.Click += (s, e) =>
       {
-        Text = "❌ Sair",
-        Location = new Point(100, 320),
-        Size = new Size(400, 60),
-        Font = new Font("Segoe UI", 12, FontStyle.Bold),
+        MessageBox.Show(
+                  "Funcionalidade em desenvolvimento.\n\n" +
+                  "Esta opção permitirá selecionar um banco, detach, mover os arquivos físicos (.mdf/.ldf) e attach novamente.",
+                  "Mover Arquivos de Banco",
+                  MessageBoxButtons.OK,
+                  MessageBoxIcon.Information);
+      };
+
+      var btnSair = new Button
+      {
+        Text = "❌ Sair do Sistema",
+        Location = new Point(60, 530),
+        Size = new Size(500, 60),
+        Font = new Font("Segoe UI", 14F, FontStyle.Bold),
         BackColor = Color.FromArgb(180, 0, 0),
         ForeColor = Color.White,
-        FlatStyle = FlatStyle.Flat
+        FlatStyle = FlatStyle.Flat,
+        Cursor = Cursors.Hand
       };
+      btnSair.FlatAppearance.BorderSize = 0;
       btnSair.Click += (s, e) => Application.Exit();
 
-      // Rodapé
-      lblRodape = new Label
+      // === RODAPÉ ===
+      var lblRodape = new Label
       {
-        Text = "Desenvolvido por Marciano Silva - CQLE Softwares © 2025",
+        Text = "Desenvolvido por Marciano Silva - CQLE Softwares © 2026",
         Dock = DockStyle.Bottom,
-        Height = 30,
+        Height = 40,
         TextAlign = ContentAlignment.MiddleCenter,
-        Font = new Font("Segoe UI", 9),
-        ForeColor = Color.Gray
+        Font = new Font("Segoe UI", 9F),
+        ForeColor = Color.Gray,
+        BackColor = Color.FromArgb(240, 240, 245)
       };
 
-      this.Controls.Add(panelHeader);
-      this.Controls.Add(btnMigracao);
-      this.Controls.Add(btnAtualizacao);
-      this.Controls.Add(btnSair);
-      this.Controls.Add(lblRodape);
+      // === MONTAGEM FINAL ===
+      this.Controls.AddRange(new Control[]
+      {
+                panelHeader,
+                btnMigracaoCompleta,
+                btnAtualizacaoTeste,
+                btnMoverArquivos,
+                btnSair,
+                lblRodape
+      });
+    }
+
+    private Button CriarBotaoGrande(string titulo, string subtitulo, Color corFundo, Point localizacao)
+    {
+      var btn = new Button
+      {
+        Location = localizacao,
+        Size = new Size(500, 90),
+        FlatStyle = FlatStyle.Flat,
+        BackColor = corFundo,
+        ForeColor = Color.White,
+        Font = new Font("Segoe UI", 13F, FontStyle.Bold),
+        TextAlign = ContentAlignment.MiddleLeft,
+        Padding = new Padding(20, 0, 0, 0),
+        Cursor = Cursors.Hand
+      };
+      btn.FlatAppearance.BorderSize = 0;
+
+      btn.Text = titulo + "\r\n" + subtitulo;
+
+      // Efeito hover
+      btn.MouseEnter += (s, e) => btn.BackColor = ControlPaint.Light(corFundo, 0.2f);
+      btn.MouseLeave += (s, e) => btn.BackColor = corFundo;
+
+      return btn;
     }
   }
 }
